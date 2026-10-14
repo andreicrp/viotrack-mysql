@@ -1,0 +1,374 @@
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Modal } from '../common/Modal';
+import { dataService } from '../../services/dataService';
+import { useNotification } from '../../context/NotificationContext';
+import {
+  FileSpreadsheet,
+  Upload,
+  Download,
+  CheckCircle2,
+  RefreshCw,
+  FileCheck,
+  FileType,
+  ShieldAlert
+} from 'lucide-react';
+import { readFileAsText, downloadSampleCsv, generateTemporaryPassword, downloadAccountCredentials } from '../../utils/csvHelper';
+import { parseEntityCsv } from '../../utils/entityCsv';
+import { extractTextFromPdf, parseAdminRosterFromPdfLines } from '../../utils/pdfHelper';
+
+const SAMPLE_ADMINS_CSV = `First Name,Middle Name,Last Name,Email,Role,Position,Contact
+Andres,,Bonifacio,andres.bonifacio@viotrack.edu,Super Admin,Discipline Officer,09171112233
+Emilio,,Jacinto,emilio.jacinto@viotrack.edu,Discipline Officer,Guidance Officer,09172223344
+Teresa,,Magbanua,teresa.magbanua@viotrack.edu,Admin Staff,Administrative Staff,09173334455`;
+
+const hasRequiredAdminFields = admin => Boolean(admin.fname?.trim() && admin.lname?.trim() && admin.email?.trim());
+
+export const BulkImportAdminsModal = ({ isOpen, onClose, onImported, initialFormat = 'all' }) => {
+  const { success, error, info } = useNotification();
+  const [activeTab, setActiveTab] = useState(initialFormat === 'pdf' ? 'pdf' : 'csv');
+  const [csvText, setCsvText] = useState('');
+  const [pdfParsedAdmins, setPdfParsedAdmins] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [parsingPdf, setParsingPdf] = useState(false);
+  const [fileName, setFileName] = useState('');
+  const [fileType, setFileType] = useState(initialFormat === 'pdf' ? 'pdf' : 'csv');
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialFormat === 'pdf' ? 'pdf' : 'csv');
+      setFileType(initialFormat === 'pdf' ? 'pdf' : 'csv');
+      setFileName('');
+      setCsvText('');
+      setPdfParsedAdmins([]);
+    }
+  }, [isOpen, initialFormat]);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isPdf = file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
+
+    try {
+      if (isPdf) {
+        setParsingPdf(true);
+        setFileName(file.name);
+        setFileType('pdf');
+        setActiveTab('pdf');
+
+        info(`Parsing admin directory PDF: ${file.name}...`);
+        const { rawLines } = await extractTextFromPdf(file);
+        const parsed = parseAdminRosterFromPdfLines(rawLines);
+
+        if (parsed.length === 0) {
+          error('Could not detect admin rows in this PDF. Please check document formatting.');
+        } else {
+          setPdfParsedAdmins(parsed.map(admin => ({ ...admin, image: '' })));
+          success(`Extracted ${parsed.length} administrator candidate records from PDF!`);
+        }
+      } else {
+        const text = await readFileAsText(file);
+        setCsvText(text);
+        setFileName(file.name);
+        setFileType('csv');
+        setActiveTab('csv');
+        info(`Loaded CSV spreadsheet: ${file.name}`);
+      }
+    } catch (err) {
+      error(`Failed to process ${isPdf ? 'PDF' : 'CSV'} file: ` + err.message);
+    } finally {
+      setParsingPdf(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    downloadSampleCsv('Viotrack_Administrators_Template.csv', SAMPLE_ADMINS_CSV);
+    success('Downloaded administrator import template CSV!');
+  };
+
+  const parsedCsvAdmins = useMemo(() => {
+    if (!csvText.trim()) return [];
+    try {
+      return parseEntityCsv(csvText, 'admin').map(admin => ({
+        ...admin,
+        role: admin.role || 'Admin',
+        image: ''
+      }));
+    } catch {
+      return [];
+    }
+  }, [csvText]);
+
+  const activeCandidateList = fileType === 'pdf' && pdfParsedAdmins.length > 0
+    ? pdfParsedAdmins
+    : parsedCsvAdmins;
+
+  const handleParseAndUpload = async () => {
+    if (activeCandidateList.length === 0) {
+      error(`No valid administrator records found in ${fileType.toUpperCase()}.`);
+      return;
+    }
+    const invalidCount = activeCandidateList.filter(admin => !hasRequiredAdminFields(admin)).length;
+    if (invalidCount) {
+      error(`${invalidCount} administrator row(s) are missing a first name, last name, or email. Correct the highlighted rows before importing.`);
+      return;
+    }
+
+    setLoading(true);
+    const createdAccounts = [];
+    try {
+      for (const a of activeCandidateList) {
+        const password = generateTemporaryPassword();
+        await dataService.addAdmin({ ...a, password });
+        createdAccounts.push({
+          name: `${a.fname} ${a.lname}`,
+          email: a.email,
+          password
+        });
+      }
+    } catch (err) {
+      if (createdAccounts.length > 0) {
+        try {
+          await downloadAccountCredentials('Viotrack_Administrator_Credentials_Partial.csv', createdAccounts);
+        } catch (downloadError) {
+          console.error('Could not download credentials for accounts already created:', downloadError);
+        }
+      }
+      error(`Import stopped after ${createdAccounts.length} account(s): ${err.message}. Save the partial credential file if downloaded.`);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await downloadAccountCredentials('Viotrack_Administrator_Credentials.csv', createdAccounts);
+    } catch (err) {
+      error(`The administrators were created, but the credential file could not be downloaded: ${err.message}. Reset these accounts' passwords before giving access.`);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    success(`Successfully enrolled ${createdAccounts.length} administrators. Save the downloaded credential file securely.`);
+    onImported?.();
+    onClose();
+    setCsvText('');
+    setPdfParsedAdmins([]);
+    setFileName('');
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Bulk Administrator Import (${activeTab.toUpperCase()})`}
+      icon={ShieldAlert}
+      maxWidth="740px"
+    >
+      <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '16px 22px', maxHeight: '76vh', overflowY: 'auto' }}>
+        
+        {/* Format Selector Tabs */}
+        <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-input, #f1f5f9)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border-subtle, transparent)' }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('csv')}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              border: activeTab === 'csv' ? '1px solid var(--border-medium, #cbd5e1)' : 'none',
+              borderRadius: '7px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              background: activeTab === 'csv' ? 'var(--bg-surface-elevated, #ffffff)' : 'transparent',
+              color: activeTab === 'csv' ? 'var(--brand-blue, #07345f)' : 'var(--text-muted, #64748b)',
+              boxShadow: activeTab === 'csv' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <FileSpreadsheet size={15} color={activeTab === 'csv' ? 'var(--brand-blue, #07345f)' : 'var(--text-muted, #64748b)'} />
+            CSV / Spreadsheet File
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('pdf')}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              border: activeTab === 'pdf' ? '1px solid var(--border-medium, #cbd5e1)' : 'none',
+              borderRadius: '7px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              background: activeTab === 'pdf' ? 'var(--bg-surface-elevated, #ffffff)' : 'transparent',
+              color: activeTab === 'pdf' ? 'var(--brand-blue, #07345f)' : 'var(--text-muted, #64748b)',
+              boxShadow: activeTab === 'pdf' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <FileType size={15} color={activeTab === 'pdf' ? 'var(--brand-blue, #07345f)' : 'var(--text-muted, #64748b)'} />
+            PDF Administrator Document
+          </button>
+        </div>
+
+        {/* Drag & Drop Upload Zone */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept={activeTab === 'pdf' ? '.pdf,application/pdf' : '.csv,text/csv'}
+          onChange={handleFileUpload}
+          style={{ display: 'none' }}
+        />
+
+        <div
+          className="file-dropzone"
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            border: `2px dashed ${fileName ? '#22c55e' : 'var(--border-medium, #cbd5e1)'}`,
+            borderRadius: '12px',
+            padding: '24px 20px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            background: fileName ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-input, #fafafa)',
+            transition: 'all 0.2s'
+          }}
+        >
+          {parsingPdf ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <RefreshCw size={32} color="var(--brand-blue, #07345f)" className="animate-spin" />
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--brand-blue, #07345f)' }}>Analyzing PDF Admin Document...</div>
+            </div>
+          ) : fileName ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+              <FileCheck size={32} color="#16a34a" />
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#16a34a' }}>{fileName}</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)' }}>Click to choose a different file</span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+              <Upload size={28} color="var(--brand-blue, #07345f)" />
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary, #1e293b)' }}>
+                Click to upload {activeTab === 'pdf' ? 'PDF Admin Registry (.pdf)' : 'Admin CSV (.csv)'}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)' }}>
+                {activeTab === 'pdf' ? 'Supports Administrative Staff rosters and directory PDFs' : 'Standard comma-delimited administrator format'}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Template download for CSV */}
+        {activeTab === 'csv' && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-surface-elevated, #f8fafc)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-subtle, #e2e8f0)' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary, #475569)' }}>Download standard CSV format with sample admin accounts</span>
+            <button
+              type="button"
+              onClick={handleDownloadTemplate}
+              style={{
+                background: 'var(--bg-surface, #ffffff)',
+                border: '1px solid var(--border-medium, #cbd5e1)',
+                color: 'var(--text-primary, #0f172a)',
+                padding: '5px 12px',
+                borderRadius: '6px',
+                fontSize: '11.5px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Download size={13} /> Sample CSV
+            </button>
+          </div>
+        )}
+
+        {/* Candidate Preview */}
+        {activeCandidateList.length > 0 && (
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
+            <div style={{ background: '#f8fafc', padding: '10px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f172a' }}>
+                Detected Administrator Candidates ({activeCandidateList.length})
+              </span>
+              <span style={{ fontSize: '11px', color: activeCandidateList.some(a => !hasRequiredAdminFields(a)) ? '#dc2626' : '#16a34a', fontWeight: 600 }}>
+                {activeCandidateList.some(a => !hasRequiredAdminFields(a)) ? `${activeCandidateList.filter(a => !hasRequiredAdminFields(a)).length} row(s) need correction` : 'Ready to Import'}
+              </span>
+            </div>
+            <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
+                <thead style={{ background: '#f1f5f9', position: 'sticky', top: 0 }}>
+                  <tr>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', color: '#475569' }}>Name</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', color: '#475569' }}>Role</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', color: '#475569' }}>Email</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', color: '#475569' }}>Contact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeCandidateList.map((a, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '6px 10px', fontWeight: 600, color: hasRequiredAdminFields(a) ? undefined : '#dc2626' }}>
+                        {[a.fname, a.mname, a.lname].filter(Boolean).join(' ') || 'Missing name'}
+                        {!hasRequiredAdminFields(a) && <div>{(a.validationErrors || ['First name, last name, and email are required']).join(', ')}</div>}
+                      </td>
+                      <td style={{ padding: '6px 10px', color: '#07345f', fontWeight: 700 }}>{a.role}</td>
+                      <td style={{ padding: '6px 10px', color: '#475569' }}>{a.email}</td>
+                      <td style={{ padding: '6px 10px', color: '#475569' }}>{a.contact}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Footer Actions */}
+        <div className="modal-footer" style={{ flexShrink: 0, display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+          <button
+            type="button"
+            className="btn btn-secondary modal-btn-secondary"
+            onClick={onClose}
+            style={{
+              padding: '9px 18px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary modal-btn-primary"
+            onClick={handleParseAndUpload}
+            disabled={loading || activeCandidateList.length === 0 || activeCandidateList.some(a => !hasRequiredAdminFields(a))}
+            style={{
+              padding: '9px 20px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: loading || activeCandidateList.length === 0 || activeCandidateList.some(a => !hasRequiredAdminFields(a)) ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            {loading ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} />}
+            Import {activeCandidateList.length > 0 ? `${activeCandidateList.length} Admins` : 'Roster'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+};

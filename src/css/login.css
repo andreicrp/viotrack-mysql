@@ -1,0 +1,484 @@
+/* login.css - Clean, Modern, Professional Aesthetic matching Brand Design */
+
+.login-body-bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  box-sizing: border-box;
+  background: radial-gradient(circle at 50% 35%, #ffffff 0%, #edf3f8 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  overscroll-behavior: none;
+  z-index: 1000;
+  user-select: none;
+}
+
+/* Background Ambient Corner Accents */
+.login-bg-shape-top-left {
+  position: absolute;
+  top: -40px;
+  left: -40px;
+  width: 260px;
+  height: 260px;
+  background: linear-gradient(135deg, rgba(7, 52, 95, 0.06) 0%, rgba(14, 165, 160, 0.02) 100%);
+  clip-path: polygon(0 0, 100% 0, 45% 75%, 0 100%);
+  pointer-events: none;
+}
+
+.login-bg-shape-bottom-right {
+  position: absolute;
+  bottom: -40px;
+  right: -40px;
+  width: 280px;
+  height: 280px;
+  background: linear-gradient(315deg, rgba(14, 165, 160, 0.12) 0%, rgba(7, 52, 95, 0.03) 100%);
+  clip-path: polygon(100% 100%, 0 100%, 60% 40%, 100% 0);
+  pointer-events: none;
+}
+
+/* Central Login Wrapper */
+.login-content-wrapper {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: auto;
+}
+
+/* Header Brand Section */
+.login-brand-header {
+  text-align: center;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-brand-logo-svg {
+  width: 120px;
+  height: 96px;
+  overflow: visible;
+  filter: drop-shadow(0 8px 20px rgba(7, 52, 95, 0.07));
+  margin-bottom: 6px;
+}
+
+.login-brand-title {
+  font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #07345F;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.login-brand-tagline {
+  font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  letter-spacing: -0.01em;
+  margin: 6px 0 0 0;
+  line-height: 1.4;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.login-brand-tagline-sub {
+  color: #0284c7;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+/* Form Card */
+.login-card-modern {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 20px 20px 18px 20px;
+  box-sizing: border-box;
+  box-shadow: 0 16px 40px -10px rgba(7, 52, 95, 0.09), 0 0 0 1px rgba(226, 232, 240, 0.85);
+  transition: box-shadow 0.3s ease;
+}
+
+/* Input Fields */
+.login-input-field-wrap {
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.login-text-input-clean {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 16px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #0f172a;
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.login-text-input-clean.has-eye {
+  padding-right: 44px;
+}
+
+.login-text-input-clean:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: #0EA5A0;
+  box-shadow: 0 0 0 3px rgba(14, 165, 160, 0.15);
+}
+
+.login-text-input-clean::placeholder {
+  color: #94a3b8;
+  font-size: 13.5px;
+  font-weight: 400;
+}
+
+.login-eye-toggle-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: color 0.2s ease;
+}
+
+.login-eye-toggle-btn:hover {
+  color: #07345F;
+}
+
+/* Checkbox & Forgot Password Row */
+.login-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+  margin-bottom: 15px;
+  font-size: 12px;
+}
+
+.login-remember-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #64748b;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.login-remember-checkbox-label input {
+  accent-color: #07345F;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.login-forgot-password-link {
+  color: #475569;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.login-forgot-password-link:hover {
+  color: #0EA5A0;
+  text-decoration: underline;
+}
+
+/* Submit Action Button */
+.login-submit-btn-primary {
+  width: 100%;
+  min-height: 46px;
+  background: #07345F;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 5px 16px rgba(7, 52, 95, 0.22);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-submit-btn-primary:hover:not(:disabled) {
+  background: #052442;
+  box-shadow: 0 7px 20px rgba(7, 52, 95, 0.3);
+  transform: translateY(-1px);
+}
+
+.login-submit-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-submit-btn-primary:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Quick Role Switcher Chips */
+.login-role-chips-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.login-role-chip-btn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.login-role-chip-btn.active {
+  background: #07345F;
+  border-color: #07345F;
+  color: #ffffff;
+}
+
+.login-role-chip-btn:hover:not(.active) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #07345F;
+}
+
+/* Privacy & Footer Terms */
+.login-privacy-footer {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.login-privacy-footer a {
+  color: #07345F;
+  font-weight: 600;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.login-privacy-footer a:hover {
+  color: #0EA5A0;
+}
+
+/* Responsive adjustments for smaller screens / height */
+@media (max-width: 480px) {
+  .login-content-wrapper {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .login-brand-header {
+    margin-bottom: 12px;
+  }
+
+  .login-brand-logo-svg {
+    width: 105px;
+    height: 84px;
+    margin-bottom: 4px;
+  }
+
+  .login-brand-title {
+    font-size: 26px;
+  }
+
+  .login-brand-tagline {
+    font-size: 11.5px;
+    margin-top: 2px;
+  }
+
+  .login-card-modern {
+    padding: 16px 16px 14px 16px;
+    border-radius: 18px;
+  }
+
+  .login-text-input-clean {
+    font-size: 16px; /* Prevents auto-zoom on iOS */
+    min-height: 44px;
+  }
+
+  .login-submit-btn-primary {
+    min-height: 44px;
+  }
+
+  .login-options-row {
+    margin-bottom: 12px;
+  }
+
+  .login-role-chips-wrap {
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+
+  .login-privacy-footer {
+    margin-top: 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-height: 720px) and (min-width: 481px) {
+  .login-body-bg {
+    justify-content: flex-start;
+    overflow-y: auto;
+  }
+
+  .login-content-wrapper {
+    width: 100%;
+    max-width: 420px;
+    flex-shrink: 0;
+  }
+
+  .login-brand-header {
+    margin-bottom: 10px;
+  }
+
+  .login-brand-logo-svg {
+    width: 92px;
+    height: 74px;
+    margin-bottom: 3px;
+  }
+
+  .login-brand-title {
+    font-size: 25px;
+  }
+
+  .login-brand-tagline {
+    font-size: 11.5px;
+    margin-top: 3px;
+  }
+
+  .login-card-modern {
+    padding: 14px 16px 12px;
+    border-radius: 16px;
+  }
+
+  .login-input-field-wrap {
+    margin-bottom: 9px;
+  }
+
+  .login-text-input-clean {
+    min-height: 40px;
+    padding-block: 8px;
+  }
+
+  .login-submit-btn-primary {
+    min-height: 40px;
+  }
+
+  .login-options-row {
+    margin-bottom: 10px;
+  }
+
+  .login-role-chips-wrap {
+    margin-top: 9px;
+    padding-top: 8px;
+  }
+
+  .login-privacy-footer {
+    margin-top: 8px;
+  }
+}
+
+/* ==========================================================================
+   Progressive Brute-Force Defense & Security Lockout Banners
+   ========================================================================== */
+.login-security-lockout-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
+}
+
+.login-security-lockout-banner strong {
+  display: block;
+  font-weight: 800;
+  font-size: 13px;
+  color: #dc2626;
+  letter-spacing: -0.01em;
+}
+
+.login-security-lockout-banner span {
+  font-size: 11.5px;
+  color: #7f1d1d;
+  font-weight: 500;
+}
+
+.login-failed-attempts-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #b45309;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  width: 100%;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.login-submit-btn-primary.is-locked {
+  background: #64748b !important;
+  cursor: not-allowed !important;
+  opacity: 0.85;
+}

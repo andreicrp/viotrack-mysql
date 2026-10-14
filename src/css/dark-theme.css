@@ -1,0 +1,10 @@
+/* Ordered theme sections; keep imports in cascade order. */
+@import './dark-theme-shell.css';
+@import './dark-theme-panels.css';
+@import './dark-theme-controls.css';
+@import './dark-theme-records.css';
+@import './dark-theme-shared.css';
+@import './dark-theme-documents.css';
+@import './dark-theme-surfaces.css';
+@import './dark-theme-actions.css';
+@import './dark-theme-audit-guidance.css';
