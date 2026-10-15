@@ -60,10 +60,12 @@ A modern, responsive **Student Violation Tracking and Monitoring System** built 
 - Circular student photos in the student directory, QR scan identification, and violation views.
 - Dark-theme contrast styling for the Guardian SMS notice dialog.
 - Staff profile-photo changes sync to the signed-in account avatar in the header and sidebar.
+- Dark-theme error pages and responsive, touch-friendly approval cards on tablet and mobile.
+- QR-originated violation reports require a fresh high-accuracy GPS fix; recorded locations can be reviewed from incident history without fabricated coordinates.
 
-### 📱 Universal "Save As" & Native Mobile File Explorer
+### 📱 Universal "Save As", Mobile Printing & Native File Explorer
 - **Desktop / Web**: Automatic background downloads without modal prompts.
-- **Android APK / Mobile**: Interactive Microsoft 365 / Google Drive-inspired Save As file explorer with real device filesystem navigation (`@capacitor/filesystem`), direct folder saving, and native print service integration.
+- **Android APK / Mobile**: Interactive Microsoft 365 / Google Drive-inspired Save As file explorer with real device filesystem navigation (`@capacitor/filesystem`), direct folder saving, and native print previews (`@capgo/capacitor-printer`).
 
 ### 🔒 Enterprise Security & Access Control
 - **Server-managed authentication**: Opaque session IDs stored as hashes in MySQL and delivered in HttpOnly cookies, with CSRF checks and server-side role/section authorization.
@@ -85,7 +87,7 @@ A modern, responsive **Student Violation Tracking and Monitoring System** built 
 | **Backend & Auth** | Node.js 24, Express 5, TypeScript, server-managed HttpOnly sessions, CSRF and RBAC |
 | **Database** | MySQL 8.4, Prisma ORM and Prisma Migrate |
 | **Audio & Haptics** | Web Audio API Synthesizer + HTML5 Audio + Navigator Vibration API |
-| **Mobile** | Capacitor 8 (Android APK with native splash screen, filesystem & share) |
+| **Mobile** | Capacitor 8 (Android APK with native splash screen, filesystem, share & printing) |
 | **Testing & Linting** | Vitest, oxlint, GitHub Actions CI |
 | **PDF & CSV** | jsPDF + jsPDF-autotable, CSV security sanitization |
 | **QR Engine** | html5-qrcode, HMAC-SHA256 cryptographic signature verification |

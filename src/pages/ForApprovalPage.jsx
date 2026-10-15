@@ -44,6 +44,7 @@ import { SaveAsModal } from '../components/common/SaveAsModal';
 import { ViewModeToggle } from '../components/common/ViewModeToggle';
 import { CustomSelect } from '../components/common/CustomSelect';
 import { Modal } from '../components/common/Modal';
+import '../css/for-approval-responsive.css';
 
 export const ForApprovalPage = () => {
   const { user } = useAuth();
@@ -493,7 +494,7 @@ export const ForApprovalPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <div className="for-approval-page" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* 1. Page Banner Header */}
       <div className="page-banner-header">
         <div className="page-banner-info">

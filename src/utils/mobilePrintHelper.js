@@ -1,12 +1,13 @@
 /**
  * Universal Mobile Print & Native Share Helper for Viotrack
- * Optimized with Capacitor Native Plugins (@capacitor/share & @capacitor/filesystem)
- * for 100% reliable Android APK execution, plus Web/Desktop fallbacks.
+ * Uses Capacitor share, filesystem, and printer plugins for native output,
+ * with Web/Desktop fallbacks.
  */
 
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Printer } from '@capgo/capacitor-printer';
 
 export const isNativeApp = () => {
   return typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform();
@@ -165,7 +166,8 @@ export async function shareOrSaveNativeFile({
 }
 
 /**
- * Universal document print or native share dispatcher
+ * Opens the platform print interface on mobile and prints through a hidden
+ * iframe on desktop browsers.
  */
 export async function printOrShareDocument({
   title = 'Viotrack Document',
@@ -174,17 +176,12 @@ export async function printOrShareDocument({
   generatePdfBlob,
   onStatus = () => {}
 }) {
-  const isNative = isNativeApp();
-  const isMobile = isMobileDevice();
-
-  // 1. Native Capacitor Android APK Flow (Share & Print Intent via Plugins)
-  if (isNative) {
-    if (typeof generatePdfBlob === 'function') {
-      try {
+  if (isNativeApp() || isMobileDevice()) {
+    try {
+      let blob;
+      if (typeof generatePdfBlob === 'function') {
         onStatus?.({ type: 'info', message: 'Generating document...' });
         const pdfOutput = await generatePdfBlob();
-        
-        let blob;
         if (pdfOutput instanceof Blob) {
           blob = pdfOutput;
         } else if (pdfOutput && typeof pdfOutput.output === 'function') {
@@ -193,89 +190,35 @@ export async function printOrShareDocument({
           blob = new Blob([pdfOutput], { type: 'application/pdf' });
         }
 
-        if (blob) {
-          const success = await shareOrSaveNativeFile({
-            filename: filename.endsWith('.pdf') ? filename : `${filename}.pdf`,
-            blob: blob,
-            title: title,
-            mimeType: 'application/pdf'
-          });
-
-          if (success) {
-            onStatus?.({ type: 'success', message: 'Document sent to system print / share.' });
-            return;
-          }
+        if (!blob) {
+          throw new Error('PDF generation did not return a printable document.');
         }
-      } catch (err) {
-        if (err?.name === 'AbortError') return;
-        console.warn('Native APK PDF print/share error:', err);
-      }
-    } else if (htmlContent) {
-      try {
-        const htmlBlob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-        await shareOrSaveNativeFile({
-          filename: filename.endsWith('.html') ? filename : `${filename}.html`,
-          blob: htmlBlob,
-          title: title,
-          mimeType: 'text/html'
+
+        await Printer.printBase64({
+          name: title,
+          data: await blobToBase64(blob),
+          mimeType: 'application/pdf'
         });
-        onStatus?.({ type: 'success', message: 'Document ready to print / share.' });
-        return;
-      } catch (err) {
-        console.warn('Native APK HTML print fallback failed:', err);
-      }
-    }
-  }
-
-  // 2. Mobile Web Browser Flow (Mobile Chrome / Safari / Firefox)
-  // On mobile browsers, raw HTML print causes viewport scaling & blank page overflow.
-  // Generating and opening/sharing the exact vector PDF solves all mobile print spooler slicing bugs!
-  if (isMobile && typeof generatePdfBlob === 'function') {
-    try {
-      onStatus?.({ type: 'info', message: 'Generating document...' });
-      const pdfOutput = await generatePdfBlob();
-      
-      let blob;
-      if (pdfOutput instanceof Blob) {
-        blob = pdfOutput;
-      } else if (pdfOutput && typeof pdfOutput.output === 'function') {
-        blob = pdfOutput.output('blob');
-      } else if (pdfOutput instanceof ArrayBuffer) {
-        blob = new Blob([pdfOutput], { type: 'application/pdf' });
+      } else if (htmlContent) {
+        await Printer.printHtml({ name: title, html: htmlContent });
+      } else {
+        throw new Error('No document content was provided for printing.');
       }
 
-      if (blob) {
-        const pdfBlob = new Blob([blob], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(pdfBlob);
-        const win = window.open(blobUrl, '_blank');
-        
-        if (win) {
-          onStatus?.({ type: 'success', message: 'Document opened in mobile viewer.' });
-          return;
-        } else {
-          // If popup is blocked by mobile browser, download directly
-          await shareOrSaveNativeFile({
-            filename: filename.endsWith('.pdf') ? filename : `${filename}.pdf`,
-            blob: pdfBlob,
-            title: title,
-            mimeType: 'application/pdf'
-          });
-          onStatus?.({ type: 'success', message: 'Document downloaded successfully.' });
-          return;
-        }
-      }
+      onStatus?.({ type: 'success', message: 'Print preview opened.' });
+      return;
     } catch (err) {
-      console.warn('Mobile PDF generation fallback to HTML print:', err);
+      if (err?.name === 'AbortError') return;
+      console.error('Mobile print preview failed:', err);
+      throw err;
     }
   }
 
-  // 3. Desktop Web Flow: Hidden IFrame Printing (100% reliable on Desktop Chrome/Edge/Safari)
   if (htmlContent) {
     try {
       onStatus?.({ type: 'info', message: 'Opening print dialog...' });
-
       const existing = document.getElementById('viotrack-print-frame');
-      if (existing) existing.remove();
+      existing?.remove();
 
       const iframe = document.createElement('iframe');
       iframe.id = 'viotrack-print-frame';
@@ -287,24 +230,20 @@ export async function printOrShareDocument({
       iframe.style.opacity = '0.01';
       iframe.style.border = '0';
       iframe.style.pointerEvents = 'none';
-
       document.body.appendChild(iframe);
 
       const doc = iframe.contentWindow.document;
       doc.open();
       doc.write(htmlContent);
       doc.close();
-
-      setTimeout(() => {
+      setTimeout(async () => {
         try {
           iframe.contentWindow.focus();
           iframe.contentWindow.print();
           onStatus?.({ type: 'success', message: 'Print dialog opened.' });
-          setTimeout(() => {
-            try { iframe.remove(); } catch (e) {}
-          }, 3000);
-        } catch (e) {
-          console.warn('Iframe print failed, falling back to popup window:', e);
+          setTimeout(() => iframe.remove(), 3000);
+        } catch (err) {
+          console.warn('Iframe print failed, falling back to popup window:', err);
           const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
           const url = URL.createObjectURL(blob);
           const printWin = window.open(url, '_blank');
@@ -315,56 +254,49 @@ export async function printOrShareDocument({
             };
             onStatus?.({ type: 'success', message: 'Print view opened in new tab.' });
           } else {
-            shareOrSaveNativeFile({
-              filename: filename.endsWith('.html') ? filename : `${filename}.html`,
-              blob,
-              title,
-              mimeType: 'text/html'
-            });
-            onStatus?.({ type: 'info', message: 'Print view downloaded.' });
+            try {
+              await shareOrSaveNativeFile({
+                filename: filename.endsWith('.html') ? filename : `${filename}.html`,
+                blob,
+                title,
+                mimeType: 'text/html'
+              });
+              onStatus?.({ type: 'info', message: 'Print view downloaded.' });
+            } catch (shareError) {
+              console.error('Print view download fallback failed:', shareError);
+              onStatus?.({ type: 'error', message: 'Unable to open or download the print view.' });
+            }
           }
         }
       }, 350);
-      return;
     } catch (err) {
       console.error('Desktop HTML print error:', err);
+      throw err;
     }
+    return;
   }
 
-  // 4. Direct PDF generator save fallback
   if (typeof generatePdfBlob === 'function') {
-    try {
-      onStatus?.({ type: 'info', message: 'Generating PDF document...' });
-      const pdfOutput = await generatePdfBlob();
-      
-      let blob;
-      if (pdfOutput instanceof Blob) {
-        blob = pdfOutput;
-      } else if (pdfOutput && typeof pdfOutput.output === 'function') {
-        blob = pdfOutput.output('blob');
-      } else if (pdfOutput instanceof ArrayBuffer) {
-        blob = new Blob([pdfOutput], { type: 'application/pdf' });
-      }
+    onStatus?.({ type: 'info', message: 'Generating PDF document...' });
+    const pdfOutput = await generatePdfBlob();
+    const blob = pdfOutput instanceof Blob
+      ? pdfOutput
+      : pdfOutput && typeof pdfOutput.output === 'function'
+        ? pdfOutput.output('blob')
+        : pdfOutput instanceof ArrayBuffer
+          ? new Blob([pdfOutput], { type: 'application/pdf' })
+          : null;
 
-      if (blob) {
-        const blobUrl = URL.createObjectURL(blob);
-        const win = window.open(blobUrl, '_blank');
-        if (win) {
-          onStatus?.({ type: 'success', message: 'PDF document opened in new tab.' });
-        } else {
-          await shareOrSaveNativeFile({
-            filename: filename.endsWith('.pdf') ? filename : `${filename}.pdf`,
-            blob: blob,
-            title: title,
-            mimeType: 'application/pdf'
-          });
-          onStatus?.({ type: 'success', message: 'PDF document downloaded.' });
-        }
-        return;
-      }
-    } catch (err) {
-      console.error('Final fallback PDF error:', err);
-      onStatus?.({ type: 'error', message: 'Failed to generate PDF: ' + err.message });
+    if (!blob) {
+      throw new Error('PDF generation did not return a printable document.');
     }
+
+    await shareOrSaveNativeFile({
+      filename: filename.endsWith('.pdf') ? filename : `${filename}.pdf`,
+      blob,
+      title,
+      mimeType: 'application/pdf'
+    });
+    onStatus?.({ type: 'success', message: 'PDF document downloaded.' });
   }
 }

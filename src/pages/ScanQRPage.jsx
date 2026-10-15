@@ -263,7 +263,7 @@ export const ScanQRPage = () => {
           if (isCancelled) return;
           if (targetId) {
             playScanSuccessSound();
-            navigate(`/student-violation/${targetId}`);
+            navigate(`/student-violation/${targetId}?from_qr=1`);
           } else {
             setIsCapturingLocation(false);
             playScanErrorSound();
@@ -462,7 +462,7 @@ export const ScanQRPage = () => {
         studentRecords={studentRecords}
         onClose={handleCloseStudentModal}
         onLogViolation={() => setIsViolationModalOpen(true)}
-        onViewFullProfile={() => navigate(`/student-violation/${scannedStudent.id}`)}
+        onViewFullProfile={() => navigate(`/student-violation/${scannedStudent.id}?from_qr=1`)}
       />
 
       {/* Log Violation Modal for Verified Student */}
@@ -471,6 +471,7 @@ export const ScanQRPage = () => {
           isOpen={isViolationModalOpen}
           onClose={() => setIsViolationModalOpen(false)}
           preselectedStudentId={scannedStudent.id}
+          requireAccurateLocation
           onRecordAdded={async () => {
             setIsViolationModalOpen(false);
             if (scannedStudent?.id) {

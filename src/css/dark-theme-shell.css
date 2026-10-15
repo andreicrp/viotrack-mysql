@@ -408,6 +408,66 @@ html.dark body,
   color: #e2e8f0 !important;
 }
 
+[data-theme="dark"] .track-location-container .leaflet-popup-content-wrapper,
+[data-theme="dark"] .track-location-container .leaflet-popup-tip {
+  background: #080808 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .track-location-container .track-popup-student-name,
+[data-theme="dark"] .track-location-container .track-popup-details {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .track-location-container .track-popup-student-grade {
+  color: #aebed3 !important;
+}
+
+[data-theme="dark"] .track-location-container .track-popup-details,
+[data-theme="dark"] .track-location-container .track-history-popup-details {
+  background: #111111 !important;
+}
+
+[data-theme="dark"] .track-location-container .track-popup-status {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .track-location-container .track-popup-details strong,
+[data-theme="dark"] .track-location-container .track-history-popup {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .track-location-container .track-history-popup-details {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .track-location-container .track-location-history-item.is-latest {
+  background: #10251a !important;
+  border-color: #166534 !important;
+}
+
+[data-theme="dark"] .track-location-container .track-location-history-item:not(.is-latest) {
+  background: #111111 !important;
+  border-color: #303030 !important;
+}
+
+[data-theme="dark"] .track-location-container .track-location-history-item:hover {
+  border-color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .track-location-container .track-location-history-item:focus-visible {
+  outline-color: #38bdf8;
+}
+
+[data-theme="dark"] .track-location-container .track-location-history-heading {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .track-location-container .track-location-history-time,
+[data-theme="dark"] .track-location-container .track-location-history-coordinates {
+  color: #aebed3 !important;
+}
+
 [data-theme="dark"] .track-location-container .track-tabs-container {
   background: #000000 !important;
 }

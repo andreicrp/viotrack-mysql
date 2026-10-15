@@ -30,8 +30,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
 });
 
-// Default center: Manila / Caloocan Institutional Grounds
-const DEFAULT_CENTER = [14.642, 120.985];
+// Perpetual Help College, 1240 V. Concepcion St., Sampaloc, Manila
+const CAMPUS_CENTER = [14.6126716, 120.9880471];
 const DEFAULT_ZOOM = 15;
 
 export const TrackLocationPage = () => {
@@ -61,6 +61,7 @@ export const TrackLocationPage = () => {
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
   const polylineRef = useRef(null);
+  const selectedHistoryMarkerRef = useRef(null);
 
   // Filter students based on RBAC authorization
   const authorizedStudents = useMemo(() => {
@@ -103,17 +104,20 @@ export const TrackLocationPage = () => {
 
   // Load student recorded location and historical incident breadcrumbs when activeStudent changes
   const fetchLocationData = useCallback(async () => {
-    if (!activeStudent?.id) return;
+    if (!activeStudent?.id) {
+      setCurrentLocation(null);
+      setLastRefreshedAt(null);
+      setLocationHistory([]);
+      return;
+    }
 
     try {
       const [latest, history] = await Promise.all([
         dataService.getStudentLatestLocation(activeStudent.id),
         dataService.getStudentLocationHistory(activeStudent.id, 15)
       ]);
-      if (latest) {
-        setCurrentLocation(latest);
-        setLastRefreshedAt(new Date(latest.recorded_at || Date.now()));
-      }
+      setCurrentLocation(latest || null);
+      setLastRefreshedAt(latest ? new Date(latest.recorded_at || Date.now()) : null);
       setLocationHistory(history || []);
     } catch (err) {
       console.warn('Error fetching location data for student:', err);
@@ -124,13 +128,18 @@ export const TrackLocationPage = () => {
     fetchLocationData();
   }, [fetchLocationData]);
 
+  useEffect(() => {
+    selectedHistoryMarkerRef.current?.remove();
+    selectedHistoryMarkerRef.current = null;
+  }, [activeStudent?.id]);
+
   // Initialize Leaflet Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
     if (mapInstanceRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
-      center: DEFAULT_CENTER,
+      center: CAMPUS_CENTER,
       zoom: DEFAULT_ZOOM,
       zoomControl: false,
       scrollWheelZoom: true
@@ -164,13 +173,22 @@ export const TrackLocationPage = () => {
       window.removeEventListener('resize', handleWindowResize);
       map.remove();
       mapInstanceRef.current = null;
+      selectedHistoryMarkerRef.current = null;
     };
   }, []);
 
   // Sync Map Marker & History Trail
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !currentLocation || !activeStudent) return;
+    if (!map) return;
+
+    if (!currentLocation || !activeStudent) {
+      markerRef.current?.remove();
+      polylineRef.current?.remove();
+      markerRef.current = null;
+      polylineRef.current = null;
+      return;
+    }
 
     const { latitude, longitude, accuracy_meters } = currentLocation;
     const latLng = [latitude, longitude];
@@ -183,7 +201,8 @@ export const TrackLocationPage = () => {
     const studentFullName = `${activeStudent.fname} ${activeStudent.lname}`;
     const avatarUrl = activeStudent.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentFullName)}&background=07345f&color=fff&size=100&bold=true`;
 
-    const accuracyRadius = Math.max(8, Number(accuracy_meters) || 10);
+    const parsedAccuracy = Number(accuracy_meters);
+    const accuracyRadius = Number.isFinite(parsedAccuracy) ? Math.max(0, parsedAccuracy) : 10;
 
     const customIcon = L.divIcon({
       className: 'student-avatar-pin',
@@ -200,14 +219,14 @@ export const TrackLocationPage = () => {
     const popupHtml = `
       <div class="track-popup">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <img src="${avatarUrl}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1.5px solid #07345f;" />
+          <img src="${avatarUrl}" class="track-popup-avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;" />
           <div>
-            <div style="font-weight: 800; font-size: 13.5px; color: #0f172a;">${studentFullName}</div>
-            <div style="font-size: 11px; color: #64748b;">${activeStudent.grade} - ${activeStudent.section}</div>
+            <div class="track-popup-student-name" style="font-weight: 800; font-size: 13.5px; color: #0f172a;">${studentFullName}</div>
+            <div class="track-popup-student-grade" style="font-size: 11px; color: #64748b;">${activeStudent.grade} - ${activeStudent.section}</div>
           </div>
         </div>
-        <div style="background: #f8fafc; padding: 6px 8px; border-radius: 6px; font-size: 11px; margin-bottom: 6px;">
-          <div><strong>Status:</strong> <span style="color: #0284c7; font-weight: 700;">Recorded Incident Ping</span></div>
+        <div class="track-popup-details" style="background: #f8fafc; padding: 6px 8px; border-radius: 6px; font-size: 11px; margin-bottom: 6px;">
+          <div><strong>Status:</strong> <span class="track-popup-status" style="font-weight: 700;">Recorded Incident Ping</span></div>
           <div><strong>Accuracy:</strong> ±${accuracyRadius} meters</div>
           <div><strong>Logged At:</strong> ${new Date(currentLocation.recorded_at || Date.now()).toLocaleTimeString()}</div>
         </div>
@@ -237,7 +256,7 @@ export const TrackLocationPage = () => {
   const handleRecenter = () => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    map.flyTo(DEFAULT_CENTER, 14, { duration: 0.8 });
+    map.flyTo(CAMPUS_CENTER, 16, { duration: 0.8 });
   };
 
   // Focus on Selected Student's Incident Location
@@ -249,6 +268,57 @@ export const TrackLocationPage = () => {
     }
     map.flyTo([currentLocation.latitude, currentLocation.longitude], 16, { duration: 0.8 });
     success(`Focused on ${activeStudent?.fname || 'Student'}'s incident location.`);
+  };
+
+  const handleFocusHistoryPoint = (crumb, index) => {
+    const map = mapInstanceRef.current;
+    const latitude = Number(crumb.latitude);
+    const longitude = Number(crumb.longitude);
+    if (
+      !map ||
+      !Number.isFinite(latitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      !Number.isFinite(longitude) ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      showError('This location history entry does not contain valid coordinates.');
+      return;
+    }
+
+    const accuracy = crumb.accuracy_meters == null ? null : Number(crumb.accuracy_meters);
+    const accuracyText = accuracy == null || !Number.isFinite(accuracy)
+      ? 'Not recorded'
+      : `±${accuracy}m`;
+    const pointNumber = locationHistory.length - index;
+    const popupContent = `
+      <div class="track-popup track-history-popup">
+        <strong>${index === 0 ? 'Latest Infraction Site' : `Incident Point #${pointNumber}`}</strong>
+        <div class="track-history-popup-details">
+          <div>Lat: ${latitude.toFixed(5)}, Lng: ${longitude.toFixed(5)}</div>
+          <div>Accuracy: ${accuracyText}</div>
+          <div>Recorded: ${formatTime(crumb.recorded_at)}</div>
+        </div>
+      </div>
+    `;
+
+    selectedHistoryMarkerRef.current?.remove();
+    selectedHistoryMarkerRef.current = L.circleMarker([latitude, longitude], {
+      radius: 9,
+      color: '#ffffff',
+      weight: 3,
+      opacity: 1,
+      fillColor: '#0284c7',
+      fillOpacity: 1
+    }).addTo(map).bindPopup(popupContent);
+
+    map.flyTo([latitude, longitude], Math.max(map.getZoom(), 17), { duration: 0.8 });
+    selectedHistoryMarkerRef.current.openPopup();
+
+    if (window.matchMedia('(max-width: 1024px)').matches) {
+      mapContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   const handleRefreshRecords = async () => {
@@ -264,7 +334,10 @@ export const TrackLocationPage = () => {
   };
 
   const getAccuracyBadge = (accuracy) => {
-    const acc = Number(accuracy) || 10;
+    if (accuracy == null || !Number.isFinite(Number(accuracy))) {
+      return { text: 'No GPS fix recorded', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0' };
+    }
+    const acc = Number(accuracy);
     if (acc <= 15) {
       return { text: `±${acc}m (High Precision)`, color: '#10b981', bg: '#ecfdf5', border: '#a7f3d0' };
     }
@@ -378,7 +451,7 @@ export const TrackLocationPage = () => {
                 >
                   <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600 }}>Tracking Mode</div>
                   <div style={{ fontSize: '12px', fontWeight: 800, color: '#475569', marginTop: '2px' }}>
-                    📍 Recorded Infraction Site
+                    {currentLocation ? '📍 Recorded Infraction Site' : 'No GPS fix recorded'}
                   </div>
                 </div>
 
@@ -471,9 +544,9 @@ export const TrackLocationPage = () => {
                   Incident coordinates are timestamped when infractions are reported, compliant with Philippine Data Privacy Act standards (RA 10173).
                 </p>
                 <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', fontSize: '11px' }}>
-                  <div><strong>Reported By:</strong> {currentLocation?.reported_by || 'Discipline Officer'}</div>
-                  <div><strong>Tracking Source:</strong> Logged Violation Report</div>
-                  <div><strong>Vicinity:</strong> Main Campus Grounds</div>
+                  <div><strong>Reported By:</strong> {currentLocation?.reported_by || 'Unavailable'}</div>
+                  <div><strong>Tracking Source:</strong> {currentLocation ? 'Logged Violation Report' : 'No location recorded'}</div>
+                  <div><strong>Vicinity:</strong> {currentLocation ? 'Recorded GPS coordinates' : 'Unavailable'}</div>
                 </div>
               </div>
             )}
@@ -487,24 +560,25 @@ export const TrackLocationPage = () => {
                   </div>
                 ) : (
                   locationHistory.map((crumb, idx) => (
-                    <div
+                    <button
+                      type="button"
                       key={crumb.id || idx}
+                      className={`track-location-history-item${idx === 0 ? ' is-latest' : ''}`}
+                      onClick={() => handleFocusHistoryPoint(crumb, idx)}
+                      aria-label={`Show ${idx === 0 ? 'latest infraction site' : `incident point ${locationHistory.length - idx}`} on the map`}
+                      title="Show this point on the map"
                       style={{
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        background: idx === 0 ? '#f0fdf4' : '#f8fafc',
-                        border: `1px solid ${idx === 0 ? '#bbf7d0' : '#e2e8f0'}`,
                         fontSize: '11.5px'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#0f172a' }}>
+                      <div className="track-location-history-heading" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#0f172a' }}>
                         <span>{idx === 0 ? '📍 Latest Infraction Site' : `Incident Point #${locationHistory.length - idx}`}</span>
-                        <span style={{ fontSize: '10.5px', color: '#64748b' }}>{formatTime(crumb.recorded_at)}</span>
+                        <span className="track-location-history-time" style={{ fontSize: '10.5px', color: '#64748b' }}>{formatTime(crumb.recorded_at)}</span>
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-                        Lat: {Number(crumb.latitude).toFixed(5)}, Lng: {Number(crumb.longitude).toFixed(5)} • ±{crumb.accuracy_meters || 10}m
+                      <div className="track-location-history-coordinates" style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                        Lat: {Number(crumb.latitude).toFixed(5)}, Lng: {Number(crumb.longitude).toFixed(5)} • {crumb.accuracy_meters == null ? 'Accuracy not recorded' : `±${crumb.accuracy_meters}m`}
                       </div>
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
