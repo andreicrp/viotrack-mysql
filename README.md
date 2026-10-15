@@ -12,6 +12,8 @@ A modern, responsive **Student Violation Tracking and Monitoring System** built 
 - Repeat & high-risk students leaderboard with infraction count badges.
 - Grade level and strand breakdown with horizontal bar visualizations.
 - Integrated school calendar with color-coded event markers and upcoming events panel.
+- Manual dashboard refresh plus automatic 45-second data refresh.
+- Printable analytics reports with approved-record, date, status, severity, and grade filters, including trend and grade breakdowns.
 - Executive vector PDF dashboard summary export (`jspdf` + `jspdf-autotable`).
 
 ### ⚡ Global Command Palette (`Ctrl + K` / `⌘K`) & Spotlight Navigation
