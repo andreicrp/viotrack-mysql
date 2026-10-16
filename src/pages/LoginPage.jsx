@@ -134,6 +134,11 @@ export const LoginPage = () => {
       success(`Welcome back! Signed in as ${authenticatedUser.role === 'admin' ? 'Administrator' : 'Faculty'}.`);
       navigate(getSafeDestination(authenticatedUser.role, rawTargetDestination));
     } catch (authIssue) {
+      if (authIssue.status !== 401 || authIssue.code === 'API_CSRF_INIT_FAILED') {
+        showError(authIssue.message || 'Unable to contact the authentication service. Please try again later.');
+        return;
+      }
+
       const nextFailed = (throttle.failedAttempts || 0) + 1;
       let nextLockout = 0;
       let alertMsg = authIssue.message || 'Authentication failed. Please verify your credentials.';

@@ -40,6 +40,19 @@ app.use(
 app.use("/api/database/restore", express.json({ limit: "100mb" }));
 app.use(express.json({ limit: "6mb" }));
 app.use(cookieParser());
+app.use((req, _res, next) => {
+  if (process.env.VERCEL) {
+    const requestUrl = new URL(req.url, "http://localhost");
+    if (requestUrl.pathname === "/api/viotrack") {
+      const apiPath = requestUrl.searchParams.get("__viotrack_path");
+      if (apiPath) {
+        requestUrl.searchParams.delete("__viotrack_path");
+        req.url = `/api/${apiPath.replace(/^\/+/, "")}${requestUrl.search}`;
+      }
+    }
+  }
+  next();
+});
 app.use("/api", csrfProtection);
 
 const jsonValue = (value: unknown): unknown =>
@@ -1596,16 +1609,18 @@ app.get("/api/public/students/:studentId", asyncRoute(async (req, res) => {
 }));
 
 app.use("/api", (_req, res) => res.status(404).json({ error: "API route not found." }));
-app.use(express.static(resolve(process.cwd(), "dist")));
-app.get(/.*/, (req, res, next) => {
-  if (req.path.startsWith("/api/")) {
-    res.status(404).json({ error: "API route not found." });
-    return;
-  }
-  res.sendFile(resolve(process.cwd(), "dist", "index.html"), (error) => {
-    if (error) next(error);
+if (!process.env.VERCEL) {
+  app.use(express.static(resolve(process.cwd(), "dist")));
+  app.get(/.*/, (req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+      res.status(404).json({ error: "API route not found." });
+      return;
+    }
+    res.sendFile(resolve(process.cwd(), "dist", "index.html"), (error) => {
+      if (error) next(error);
+    });
   });
-});
+}
 
 const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   if (res.headersSent) return;
@@ -1634,15 +1649,19 @@ const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
 };
 app.use(errorHandler);
 
-const server = app.listen(port, () => {
-  console.log(`VioTrack API listening on port ${port}`);
-});
-
-const shutdown = async () => {
-  server.close(async () => {
-    await prisma.$disconnect();
-    process.exit(0);
+if (!process.env.VERCEL) {
+  const server = app.listen(port, () => {
+    console.log(`VioTrack API listening on port ${port}`);
   });
-};
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+
+  const shutdown = async () => {
+    server.close(async () => {
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+}
+
+export default app;
