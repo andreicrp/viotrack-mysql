@@ -147,8 +147,6 @@ If port 5173 is already in use, run Vite on another local port, for example `npm
 
 Production: run `npm run build` and `npm run build:server`, then start the Node server with `npm run server:start`. It serves the built frontend and API from one origin.
 
-For Vercel, `vercel.json` routes `/api/*` to the existing Express API function. Configure `DATABASE_URL`, `FRONTEND_ORIGINS` (the exact production site origin), and `QR_HMAC_SECRET` in the Vercel project’s Environment Variables, and ensure the database has the Prisma migrations applied and an administrator account seeded. Keep `VITE_API_BASE_URL` empty for this same-origin setup. A static-site fallback to `index.html` is not an API proxy; without the function route, `/api/auth/csrf` returns the frontend instead of a CSRF token and sign-in cannot proceed.
-
 ---
 
 ## 🧪 Testing & Build
