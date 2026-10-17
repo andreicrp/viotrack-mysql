@@ -135,21 +135,6 @@
   background: #e2e8f0;
 }
 
-.student-avatar-badge {
-  position: absolute;
-  bottom: -3px;
-  right: -3px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #07345f;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #ffffff;
-}
-
 .student-hero-meta {
   display: flex;
   flex-direction: column;
@@ -531,12 +516,6 @@
 [data-theme="dark"] .student-hero-avatar {
   border-color: #404040 !important;
   background: #111111 !important;
-}
-
-[data-theme="dark"] .student-avatar-badge {
-  background: #0284c7 !important;
-  color: #ffffff !important;
-  border-color: #080808 !important;
 }
 
 [data-theme="dark"] .student-hero-name {

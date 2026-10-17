@@ -259,7 +259,9 @@ export const getStudentQrCodeUrl = async (student, size = 300, margin = 1, signe
   return QRCode.toDataURL(data, {
     width: size,
     margin,
-    errorCorrectionLevel: 'M'
+    // Reserve enough redundancy to keep student passes scannable with the
+    // small VioTrack mark displayed in the center of every QR.
+    errorCorrectionLevel: 'H'
   });
 };
 

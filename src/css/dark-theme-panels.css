@@ -496,7 +496,8 @@ html[data-theme="dark"] body .dash-insight-text {
 [data-theme="dark"] .dash-cal-nav-btn:hover,
 [data-theme="dark"] .calendar-nav-btn:hover {
   background: #161616 !important;
-  color: #38bdf8 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
 }
 
 [data-theme="dark"] .dash-cal-day-name,
@@ -547,14 +548,14 @@ html[data-theme="dark"] body .dash-insight-text {
   height: 30px !important;
   border-radius: 8px !important;
   background: #111111 !important;
-  border-color: #303030 !important;
-  color: #cbd5e1 !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
 }
 
 [data-theme="dark"] .dash-cal-nav-btn:hover {
   background: #161616 !important;
-  border-color: #38bdf8 !important;
-  color: #7dd3fc !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
 }
 
 [data-theme="dark"] .dash-calendar-grid-clean {

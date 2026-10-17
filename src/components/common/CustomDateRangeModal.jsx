@@ -132,6 +132,7 @@ export const CustomDateRangeModal = ({
 
   return (
     <div
+      className="custom-date-range-overlay"
       style={{
         position: 'fixed',
         inset: 0,
@@ -148,6 +149,7 @@ export const CustomDateRangeModal = ({
       }}
     >
       <div
+        className="custom-date-range-dialog"
         style={{
           background: 'var(--bg-surface, #ffffff)',
           borderRadius: '20px',
@@ -163,6 +165,7 @@ export const CustomDateRangeModal = ({
       >
         {/* Modal Header */}
         <div
+          className="custom-date-range-header"
           style={{
             padding: '20px 24px 16px 24px',
             borderBottom: '1px solid var(--border-subtle, #f1f5f9)',
@@ -202,7 +205,7 @@ export const CustomDateRangeModal = ({
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleApply} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <form className="custom-date-range-form" onSubmit={handleApply} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
           
           {/* Quick Presets Grid */}
           <div>
@@ -213,7 +216,7 @@ export const CustomDateRangeModal = ({
               <span style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', fontWeight: 600 }}>One-click selection</span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+            <div className="date-presets-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
               {presets.map((p) => {
                 const isSelected = activePreset === p.id;
                 return (
@@ -244,6 +247,7 @@ export const CustomDateRangeModal = ({
 
           {/* Date Range Interval Card */}
           <div
+            className="date-range-interval-card"
             style={{
               background: 'var(--bg-surface-elevated, #f8fafc)',
               border: '1px solid var(--border-subtle, #e2e8f0)',
@@ -297,6 +301,7 @@ export const CustomDateRangeModal = ({
 
           {/* Selected Range Preview Banner */}
           <div
+            className="date-range-preview-card"
             style={{
               background: 'var(--bg-surface-elevated, #f0f4f8)',
               border: '1px solid var(--border-subtle, #cbd5e1)',
@@ -340,6 +345,7 @@ export const CustomDateRangeModal = ({
 
           {/* Modal Footer Actions */}
           <div
+            className="date-range-modal-actions"
             style={{
               display: 'flex',
               justifyContent: 'flex-end',

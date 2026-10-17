@@ -993,8 +993,9 @@ export const ViolationTypesPage = () => {
                     </div>
 
                     {/* Middle Offense Hero Header (Icon + Title) */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                    <div className="violation-catalog-grid-hero" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
                       <div
+                        className="violation-catalog-grid-icon"
                         style={{
                           width: 42,
                           height: 42,
@@ -1134,6 +1135,7 @@ export const ViolationTypesPage = () => {
                       </span>
                     </div>
                     <span
+                      className={`violation-catalog-severity-badge ${isMajor ? 'severity-major' : isSerious ? 'severity-serious' : 'severity-minor'}`}
                       style={{
                         padding: '3px 8px',
                         borderRadius: '20px',
@@ -1147,12 +1149,14 @@ export const ViolationTypesPage = () => {
                     </span>
                   </div>
 
-                  <p className="violation-catalog-mobile-description" style={{ margin: 0, fontSize: '12.5px', color: '#64748b', lineHeight: 1.4 }}>
-                    {v.description || 'Standard handbook conduct policy infraction.'}
-                  </p>
+                  <div className="violation-catalog-detail-panel">
+                    <p className="violation-catalog-mobile-description" style={{ margin: 0, fontSize: '12.5px', color: '#64748b', lineHeight: 1.4 }}>
+                      {v.description || 'Standard handbook conduct policy infraction.'}
+                    </p>
 
-                  <div className="violation-catalog-mobile-sanction" style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', color: '#334155' }}>
-                    Sanction: <strong className="violation-catalog-sanction-value" style={{ color: '#07345f' }}>{v.default_sanction || '1st Warning / Conference'}</strong>
+                    <div className="violation-catalog-mobile-sanction" style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', color: '#334155' }}>
+                      Sanction: <strong className="violation-catalog-sanction-value" style={{ color: '#07345f' }}>{v.default_sanction || '1st Warning / Conference'}</strong>
+                    </div>
                   </div>
 
                   <div className="violation-catalog-mobile-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', paddingTop: '4px', borderTop: '1px dashed #e2e8f0' }}>
@@ -1251,6 +1255,7 @@ export const ViolationTypesPage = () => {
       {/* Premium Add / Edit Violation Modal */}
       {isModalOpen && (
         <div
+          className="violation-types-editor-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
@@ -1265,6 +1270,7 @@ export const ViolationTypesPage = () => {
           onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
         >
           <div
+            className="violation-types-editor-modal"
             style={{
               background: 'var(--bg-surface, #ffffff)',
               borderRadius: '18px',
@@ -1280,6 +1286,7 @@ export const ViolationTypesPage = () => {
           >
             {/* Modal Header */}
             <div
+              className="violation-types-editor-header"
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -1289,7 +1296,7 @@ export const ViolationTypesPage = () => {
                 background: 'var(--bg-surface, #ffffff)'
               }}
             >
-              <div>
+              <div className="violation-types-editor-heading">
                 <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', letterSpacing: '-0.3px' }}>
                   {editingViolation ? 'Edit Violation Offense' : 'Add Violation Offense'}
                 </h3>
@@ -1319,9 +1326,9 @@ export const ViolationTypesPage = () => {
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleSubmit}>
+            <form className="violation-types-editor-form" onSubmit={handleSubmit}>
               <div 
-                className="smooth-scroll-container"
+                className="smooth-scroll-container violation-types-editor-body"
                 style={{ 
                   padding: '22px 24px', 
                   display: 'flex', 
@@ -1362,9 +1369,10 @@ export const ViolationTypesPage = () => {
                   <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary, #334155)', display: 'block', marginBottom: '8px' }}>
                     Severity Classification <span style={{ color: '#ef4444' }}>*</span>
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                  <div className="violation-types-severity-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                     {/* Minor Card */}
                     <div
+                      className="violation-types-severity-option"
                       onClick={() => setFormData({ ...formData, type: 'Minor' })}
                       style={{
                         padding: '12px 10px',
@@ -1388,6 +1396,7 @@ export const ViolationTypesPage = () => {
 
                     {/* Serious Card */}
                     <div
+                      className="violation-types-severity-option"
                       onClick={() => setFormData({ ...formData, type: 'Serious' })}
                       style={{
                         padding: '12px 10px',
@@ -1411,6 +1420,7 @@ export const ViolationTypesPage = () => {
 
                     {/* Major Card */}
                     <div
+                      className="violation-types-severity-option"
                       onClick={() => setFormData({ ...formData, type: 'Major' })}
                       style={{
                         padding: '12px 10px',
@@ -1459,14 +1469,11 @@ export const ViolationTypesPage = () => {
                   />
                 </div>
 
-                {/* Default Sanction / Consequence with Preset Chips */}
+                {/* Default Sanction / Consequence */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary, #334155)' }}>
-                      Default Sanction / Consequence
-                    </label>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)' }}>Click presets to autofill:</span>
-                  </div>
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary, #334155)', display: 'block', marginBottom: '6px' }}>
+                    Default Sanction / Consequence
+                  </label>
 
                   <input
                     type="text"
@@ -1485,40 +1492,12 @@ export const ViolationTypesPage = () => {
                     }}
                   />
 
-                  {/* Suggestion Chips */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-                    {[
-                      'Written Warning & Reprimand',
-                      'Parent Conference & Counseling',
-                      '1-Day In-School Suspension',
-                      '3-Day Suspension & Disciplinary Board',
-                      'Community Service (4 hours)'
-                    ].map((chip) => (
-                      <button
-                        key={chip}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, default_sanction: chip })}
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          padding: '3px 9px',
-                          borderRadius: '12px',
-                          border: '1px solid var(--border-subtle, #e2e8f0)',
-                          background: 'var(--bg-surface-elevated, #f8fafc)',
-                          color: 'var(--text-secondary, #475569)',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s'
-                        }}
-                      >
-                        + {chip}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
 
               {/* Modal Footer */}
               <div
+                className="violation-types-editor-footer"
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -1532,7 +1511,7 @@ export const ViolationTypesPage = () => {
                   <span style={{ color: '#ef4444' }}>*</span> Mandatory fields
                 </span>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div className="violation-types-editor-footer-actions" style={{ display: 'flex', gap: '10px' }}>
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}

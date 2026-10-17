@@ -57,8 +57,8 @@ export const DashboardTrendChart = ({
         fontSize={chartFilter === 'today' ? 9 : 11}
         tickLine={false}
         axisLine={false}
-        interval={chartFilter === 'month' ? 4 : 0}
-        minTickGap={0}
+        interval={chartFilter === 'month' ? 4 : 'preserveStartEnd'}
+        minTickGap={chartFilter === 'today' ? 16 : 12}
       />
       <YAxis
         stroke="#94a3b8"

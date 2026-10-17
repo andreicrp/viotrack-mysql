@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { QrCode } from 'lucide-react';
 import { Modal } from '../common/Modal';
+import { BrandedStudentQr } from '../common/BrandedStudentQr';
 import { getStudentQrCodeUrl } from '../../utils/qrHelper';
 
 export const StudentQrModal = ({ isOpen, onClose, student }) => {
@@ -43,7 +44,7 @@ export const StudentQrModal = ({ isOpen, onClose, student }) => {
     >
       <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', textAlign: 'center' }}>
         {qrDataUrl ? (
-          <img
+          <BrandedStudentQr
             src={qrDataUrl}
             alt={`Secure QR code for ${fullName || studentId}`}
             style={{ width: 'min(100%, 280px)', aspectRatio: '1', objectFit: 'contain', padding: '10px', background: '#ffffff', border: '1px solid var(--border-subtle, #e2e8f0)', borderRadius: '8px' }}

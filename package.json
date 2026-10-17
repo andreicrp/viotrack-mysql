@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n API,WEB \"npm:server:dev\" \"vite\"",
+    "dev": "concurrently -k -n API,WEB,LANGUAGETOOL \"npm:server:dev\" \"vite\" \"npm:languagetool:dev\"",
+    "languagetool:dev": "java -cp \"LanguageTool/*;LanguageTool/libs/*\" org.languagetool.server.HTTPServer --port 8010",
     "build": "vite build",
     "build:server": "tsc -p server/tsconfig.json",
     "lint": "oxlint",

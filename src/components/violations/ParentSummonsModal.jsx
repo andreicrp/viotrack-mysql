@@ -445,7 +445,13 @@ export const buildParentSummonsHtml = ({
 </html>`;
 };
 
-export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }) => {
+const formatConferenceSummaryDate = (value) => {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+
+export const ParentSummonsModal = ({ isOpen, onClose, record, student, records, conferenceMode = false }) => {
   const { user } = useAuth();
   const { success, error, info } = useNotification();
   const printRef = useRef(null);
@@ -712,7 +718,17 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
   const [customRemarks, setCustomRemarks] = useState(
     'Please bring a valid government/company ID. Your cooperation is vital to supporting your child\'s academic and personal character development.'
   );
+  const [conferencePurpose, setConferencePurpose] = useState('To discuss the recorded student violation, understand the circumstances surrounding the incident, and establish appropriate corrective actions.');
+  const [conferenceDiscussion, setConferenceDiscussion] = useState('');
+  const [conferenceActions, setConferenceActions] = useState('The student agreed to follow school policies and avoid repeating the reported behavior. The assigned staff member will monitor the student’s compliance and conduct a follow-up assessment if necessary.');
+  const [conferenceFollowUpDate, setConferenceFollowUpDate] = useState('');
+  const [conferenceRemarks, setConferenceRemarks] = useState('');
   const [isSendingSms, setIsSendingSms] = useState(false);
+
+  useEffect(() => {
+    const title = record?.violation?.title || record?.violation?.name || record?.offense || 'recorded violation';
+    setConferenceDiscussion(`The conference was conducted to discuss ${title} and provide the student with an opportunity to explain the incident. The participants discussed the importance of following school rules and maintaining appropriate behavior within the campus.`);
+  }, [record?.id]);
 
   // Resize and measurement listener
   useEffect(() => {
@@ -846,7 +862,7 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
     ? selectedViolations
     : (studentViolations.length > 0 ? [studentViolations[0]] : (record ? [record] : []));
 
-  const referenceNo = `PHCM-SUM-${new Date().getFullYear()}-${String(record?.id || Math.floor(1000 + Math.random() * 9000)).padStart(5, '0')}`;
+  const referenceNo = `PHCM-${conferenceMode ? 'CONF' : 'SUM'}-${new Date().getFullYear()}-${String(record?.id || Math.floor(1000 + Math.random() * 9000)).padStart(5, '0')}`;
   const currentDateFormatted = new Date().toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -1095,9 +1111,69 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
     return doc;
   };
 
+  const generateConferencePdfDoc = async () => {
+    const [doc, logoBase64, sealBase64] = await Promise.all([
+      getJsPDF({ unit: 'mm', format: 'a4' }),
+      loadPublicImageAsBase64('/images/phcm-logo.png'),
+      loadPublicImageAsBase64('/images/phcm-seal.png')
+    ]);
+    if (logoBase64) { try { doc.addImage(logoBase64, 'PNG', 16, 10, 14, 14); } catch {} }
+    if (sealBase64) { try { doc.addImage(sealBase64, 'PNG', 180, 10, 14, 14); } catch {} }
+    doc.setTextColor(15, 23, 42);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('UNIVERSITY OF PERPETUAL HELP SYSTEM MANILA', 105, 16, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('1240 V. Concepcion St., Sampaloc, Manila | Office of the Prefect of Discipline', 105, 21, { align: 'center' });
+    doc.text('VIOTRACK DISCIPLINARY & STUDENT WELFARE MANAGEMENT SYSTEM', 105, 25, { align: 'center' });
+    doc.setDrawColor(15, 23, 42);
+    doc.line(14, 31, 196, 31);
+    let y = 40;
+    const addSection = (title, body) => {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.text(title, 14, y); y += 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+      const lines = doc.splitTextToSize(String(body || '—'), 182);
+      doc.text(lines, 14, y); y += lines.length * 4.5 + 5;
+      if (y > 260) { doc.addPage(); y = 20; }
+    };
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text('STUDENT CONFERENCE SUMMARY REPORT', 105, y, { align: 'center' }); y += 11;
+    addSection('I. Student Information', `Student Name: ${studentFullName}\nLRN / Student ID: ${activeStudent.lrn || activeStudent.student_id || 'N/A'}\nGrade and Section: ${activeStudent.grade || 'Grade 10'} - ${activeStudent.section || 'General'}\nConference Date: ${formattedConfDate}`);
+    addSection('II. Purpose of Conference', conferencePurpose);
+    addSection('III. Violation Discussed', activeViolations.map(v => v.violation?.title || v.offense || 'Disciplinary infraction').join(', '));
+    addSection('IV. Discussion Summary', conferenceDiscussion);
+    addSection('V. Agreed Actions', conferenceActions);
+    addSection('VI. Follow-up', `Follow-up Date: ${conferenceFollowUpDate ? formatConferenceSummaryDate(`${conferenceFollowUpDate}T00:00:00`) : 'To be scheduled'}\nAdditional Remarks: ${conferenceRemarks || 'None'}`);
+    y = Math.max(y + 8, 240);
+    if (signatory1Signature) {
+      try { doc.addImage(signatory1Signature, signatureImageFormat(signatory1Signature), 18, y - 16, 48, 12); } catch {}
+    }
+    if (includeSignatory2 && signatory2Signature) {
+      try { doc.addImage(signatory2Signature, signatureImageFormat(signatory2Signature), 116, y - 16, 48, 12); } catch {}
+    }
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text(signatory1Name, 14, y); if (includeSignatory2) doc.text(signatory2Name, 112, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.text(signatory1Title, 14, y + 5); doc.text(signatory2Title, 112, y + 5);
+    return doc;
+  };
+
   // 1. Direct Print & Mobile Native Share Functionality
   const handlePrint = async () => {
     try {
+      if (conferenceMode) {
+        const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+        const signatureMarkup = (signature, name) => signature ? `<img src="${signature}" alt="${escapeHtml(name)} signature" style="display:block;width:150px;height:38px;object-fit:contain;object-position:left bottom">` : '';
+        const htmlContent = `<!doctype html><html><head><meta charset="utf-8"><title>Conference Summary - ${escapeHtml(studentFullName)}</title><style>body{font:12px/1.55 Arial,sans-serif;color:#0f172a;margin:18mm}h1,h2{text-align:center}h1{font-size:16px}h2{font-size:13px;margin-top:18px}p{white-space:pre-wrap}.head{text-align:center;border-bottom:2px solid #0f172a;padding-bottom:12px}.sign{display:flex;justify-content:space-between;margin-top:46px}.sign div{width:45%;border-top:1px solid #64748b;padding-top:5px}</style></head><body><div class="head"><b>UNIVERSITY OF PERPETUAL HELP SYSTEM MANILA</b><br>1240 V. Concepcion St., Sampaloc, Manila | Office of the Prefect of Discipline<br>VIOTRACK DISCIPLINARY &amp; STUDENT WELFARE MANAGEMENT SYSTEM</div><h1>STUDENT CONFERENCE SUMMARY REPORT</h1><h2>I. Student Information</h2><p>Student Name: ${escapeHtml(studentFullName)}<br>LRN / Student ID: ${escapeHtml(activeStudent.lrn || activeStudent.student_id || 'N/A')}<br>Grade and Section: ${escapeHtml(activeStudent.grade || 'Grade 10')} - ${escapeHtml(activeStudent.section || 'General')}<br>Conference Date: ${escapeHtml(formattedConfDate)}</p><h2>II. Purpose of Conference</h2><p>${escapeHtml(conferencePurpose)}</p><h2>III. Violation Discussed</h2><p>${escapeHtml(activeViolations.map(v => v.violation?.title || v.offense || 'Disciplinary infraction').join(', '))}</p><h2>IV. Discussion Summary</h2><p>${escapeHtml(conferenceDiscussion)}</p><h2>V. Agreed Actions</h2><p>${escapeHtml(conferenceActions)}</p><h2>VI. Follow-up</h2><p>Follow-up Date: ${escapeHtml(conferenceFollowUpDate ? formatConferenceSummaryDate(`${conferenceFollowUpDate}T00:00:00`) : 'To be scheduled')}<br>Additional Remarks: ${escapeHtml(conferenceRemarks || 'None')}</p><div class="sign"><div>${signatureMarkup(signatory1Signature, signatory1Name)}<b>${escapeHtml(signatory1Name)}</b><br>${escapeHtml(signatory1Title)}</div>${includeSignatory2 ? `<div>${signatureMarkup(signatory2Signature, signatory2Name)}<b>${escapeHtml(signatory2Name)}</b><br>${escapeHtml(signatory2Title)}</div>` : ''}</div></body></html>`;
+        const reportPdf = await generateConferencePdfDoc();
+        await printOrShareDocument({
+          title: `${studentLastName || 'Student'} - Conference Summary`,
+          filename: `Conference_Summary_${studentFullName.replace(/\s+/g, '_')}.pdf`,
+          htmlContent,
+          generatePdfBlob: async () => reportPdf.output('blob'),
+          onStatus: (st) => { if (st.type === 'success') success(st.message); else if (st.type === 'info') info(st.message); else if (st.type === 'error') error(st.message); }
+        });
+        return;
+      }
       const html = buildParentSummonsHtml({
         parentName,
         studentFullName,
@@ -1141,6 +1217,12 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
   // 2. High Quality PDF Generation
   const handleDownloadPDF = async () => {
     try {
+      if (conferenceMode) {
+        const doc = await generateConferencePdfDoc();
+        await downloadBlobFile({ filename: `Conference_Summary_${studentFullName.replace(/\s+/g, '_')}.pdf`, blob: doc.output('blob'), mimeType: 'application/pdf' });
+        success('Conference summary PDF downloaded.');
+        return;
+      }
       info('Generating Parent Summons PDF...');
       const doc = await generateSummonsPdfDoc();
       const filename = `Parent_Summons_${studentFullName.replace(/\s+/g, '_')}_${referenceNo}.pdf`;
@@ -1176,7 +1258,56 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
   };
 
   // Render Left Column / Drawer Form Content
-  const renderFormContent = () => (
+  const renderFormContent = () => {
+    if (conferenceMode) return (
+      <div className="psm-form-content" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="psm-form-section" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="psm-form-section-heading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>1. Conference Summary Details</span>
+            <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: 700 }}>Editable</span>
+          </div>
+          <div style={{ padding: '10px', background: 'var(--bg-surface, #fff)', border: '1px solid var(--border-medium, #e2e8f0)', borderRadius: '8px', fontSize: '11px', color: 'var(--text-primary, #0f172a)' }}>
+            <strong>{studentFullName}</strong><br />
+            <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: '10px' }}>{activeStudent.grade || 'Grade 10'} - {activeStudent.section || 'General'} | {activeStudent.student_id || 'N/A'}</span>
+          </div>
+          <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}>Conference Date
+            <CustomDatePicker value={conferenceDate} onChange={setConferenceDate} placeholder="Select Date" className="psm-conference-date-picker" />
+          </label>
+          <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}>Purpose of Conference
+            <LanguageToolTextarea rows={3} value={conferencePurpose} onChange={setConferencePurpose} style={{ width: '100%', marginTop: '5px', padding: '7px 10px', borderRadius: '7px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '12px', lineHeight: 1.4, resize: 'vertical', boxSizing: 'border-box' }} />
+          </label>
+          <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}>Discussion Summary
+            <LanguageToolTextarea rows={4} value={conferenceDiscussion} onChange={setConferenceDiscussion} style={{ width: '100%', marginTop: '5px', padding: '7px 10px', borderRadius: '7px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '12px', lineHeight: 1.4, resize: 'vertical', boxSizing: 'border-box' }} />
+          </label>
+          <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}>Agreed Actions
+            <LanguageToolTextarea rows={4} value={conferenceActions} onChange={setConferenceActions} style={{ width: '100%', marginTop: '5px', padding: '7px 10px', borderRadius: '7px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '12px', lineHeight: 1.4, resize: 'vertical', boxSizing: 'border-box' }} />
+          </label>
+          <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}>Follow-up Date
+            <input className="psm-conference-summary-input" type="date" value={conferenceFollowUpDate} onChange={(event) => setConferenceFollowUpDate(event.target.value)} style={{ display: 'block', width: '100%', marginTop: '5px', padding: '7px 9px', borderRadius: '7px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '12px', boxSizing: 'border-box' }} />
+          </label>
+          <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}>Additional Remarks
+            <LanguageToolTextarea rows={3} value={conferenceRemarks} onChange={setConferenceRemarks} style={{ width: '100%', marginTop: '5px', padding: '7px 10px', borderRadius: '7px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '12px', lineHeight: 1.4, resize: 'vertical', boxSizing: 'border-box' }} />
+          </label>
+          <div className="psm-form-section-heading" style={{ borderBottom: '1px solid #e2e8f0', padding: '5px 0 6px', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>2. Authorized Signatories</div>
+          <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}>Prepared by<input className="psm-conference-summary-input" type="text" value={signatory1Name} onChange={(event) => setSignatory1Name(event.target.value)} style={{ display: 'block', width: '100%', marginTop: '5px', padding: '7px 9px', borderRadius: '7px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '12px', boxSizing: 'border-box' }} /></label>
+          <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}>Designation<input className="psm-conference-summary-input" type="text" value={signatory1Title} onChange={(event) => setSignatory1Title(event.target.value)} style={{ display: 'block', width: '100%', marginTop: '5px', padding: '7px 9px', borderRadius: '7px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '12px', boxSizing: 'border-box' }} /></label>
+          <div className="psm-conference-signature-control">
+            <label className="psm-signature-upload" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '6px', padding: '5px 9px', border: '1px solid var(--border-medium, #cbd5e1)', borderRadius: '6px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary, #475569)' }}><Upload size={12} /> {signatory1Signature ? 'Replace digital signature' : 'Insert digital signature'}<input type="file" accept="image/png,image/jpeg" onChange={(event) => handleSignatureUpload(event, setSignatory1Signature)} style={{ display: 'none' }} /></label>
+            {signatory1Signature && <><img src={signatory1Signature} alt={`${signatory1Name} signature preview`} style={{ display: 'block', width: '150px', height: '36px', objectFit: 'contain', objectPosition: 'left center', marginTop: '5px' }} /><button type="button" onClick={() => setSignatory1Signature('')} style={{ border: 0, background: 'none', color: '#b91c1c', fontSize: '10px', cursor: 'pointer' }}>Remove signature</button></>}
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}><input type="checkbox" checked={includeSignatory2} onChange={(event) => setIncludeSignatory2(event.target.checked)} /> Include acknowledged-by signatory</label>
+          {includeSignatory2 && <>
+            <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}>Acknowledged by<input className="psm-conference-summary-input" type="text" value={signatory2Name} onChange={(event) => setSignatory2Name(event.target.value)} style={{ display: 'block', width: '100%', marginTop: '5px', padding: '7px 9px', borderRadius: '7px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '12px', boxSizing: 'border-box' }} /></label>
+            <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary, #334155)' }}>Designation<input className="psm-conference-summary-input" type="text" value={signatory2Title} onChange={(event) => setSignatory2Title(event.target.value)} style={{ display: 'block', width: '100%', marginTop: '5px', padding: '7px 9px', borderRadius: '7px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '12px', boxSizing: 'border-box' }} /></label>
+            <div className="psm-conference-signature-control">
+              <label className="psm-signature-upload" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '6px', padding: '5px 9px', border: '1px solid var(--border-medium, #cbd5e1)', borderRadius: '6px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary, #475569)' }}><Upload size={12} /> {signatory2Signature ? 'Replace digital signature' : 'Insert digital signature'}<input type="file" accept="image/png,image/jpeg" onChange={(event) => handleSignatureUpload(event, setSignatory2Signature)} style={{ display: 'none' }} /></label>
+              {signatory2Signature && <><img src={signatory2Signature} alt={`${signatory2Name} signature preview`} style={{ display: 'block', width: '150px', height: '36px', objectFit: 'contain', objectPosition: 'left center', marginTop: '5px' }} /><button type="button" onClick={() => setSignatory2Signature('')} style={{ border: 0, background: 'none', color: '#b91c1c', fontSize: '10px', cursor: 'pointer' }}>Remove signature</button></>}
+            </div>
+          </>}
+        </div>
+      </div>
+    );
+    return (
     <div className="psm-form-content" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* 1. Summons Basic Parameters */}
       <div className="psm-form-section" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1540,7 +1671,8 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
         )}
       </div>
     </div>
-  );
+    );
+  };
 
   if (!isOpen || user?.role === 'teacher') return null;
 
@@ -2111,11 +2243,11 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0, overflow: 'hidden' }}>
                 <FileText size={14} className="psm-header-icon" color="currentColor" style={{ flexShrink: 0 }} />
                 <h3 className="psm-header-title" style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: 1 }}>
-                  {studentLastName ? `${studentLastName} - Parent Summon` : 'Parent Summon'}
+                  {studentLastName ? `${studentLastName} - ${conferenceMode ? 'Conference Summary' : 'Parent Summon'}` : (conferenceMode ? 'Conference Summary' : 'Parent Summon')}
                 </h3>
               </div>
               <span className="psm-header-sub" style={{ fontSize: '11px', color: 'var(--text-secondary, #64748b)', display: 'block', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                Official disciplinary conference notice letter for parent / guardian.
+                {conferenceMode ? 'Official student conference summary report.' : 'Official disciplinary conference notice letter for parent / guardian.'}
               </span>
             </div>
           </div>
@@ -2143,7 +2275,7 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
                 boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
                 transition: 'all 0.15s ease'
               }}
-              title="Download Summons PDF"
+              title={conferenceMode ? 'Download Conference Summary PDF' : 'Download Summons PDF'}
             >
               <Download size={14} color="currentColor" />
               <span>PDF</span>
@@ -2170,7 +2302,7 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
                 boxShadow: '0 1px 3px rgba(15, 23, 42, 0.15)',
                 transition: 'all 0.15s ease'
               }}
-              title="Print Summons Letter"
+              title={conferenceMode ? 'Print Conference Summary' : 'Print Summons Letter'}
             >
               <Printer size={14} color="currentColor" />
               <span>Print</span>
@@ -2327,20 +2459,45 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
                   {/* Notice Heading */}
                   <div style={{ textAlign: 'center', margin: '14px 0 16px' }}>
                     <h3 className="psm-notice-title">
-                      OFFICIAL PARENT / GUARDIAN CONFERENCE NOTICE
+                      {conferenceMode ? 'STUDENT CONFERENCE SUMMARY REPORT' : 'OFFICIAL PARENT / GUARDIAN CONFERENCE NOTICE'}
                     </h3>
-                    <span className="psm-notice-sub">
+                    {!conferenceMode && <span className="psm-notice-sub">
                       (MANDATORY DISCIPLINARY APPEARANCE)
-                    </span>
+                    </span>}
                   </div>
 
                   {/* Recipient */}
                   <div className="psm-recipient-box">
-                    <div><strong>TO:</strong> {parentName.toUpperCase()}</div>
-                    <div><strong>Parent / Legal Guardian of:</strong> {studentFullName}</div>
-                    <div><strong>Grade &amp; Section:</strong> {activeStudent.grade || 'Grade 10'} - {activeStudent.section || 'General'} | <strong>Student ID:</strong> {activeStudent.student_id || activeStudent.student_id || 'N/A'}</div>
+                    {conferenceMode ? <>
+                      <div><strong>Student Name:</strong> {studentFullName}</div>
+                      <div><strong>LRN / Student ID:</strong> {activeStudent.lrn || activeStudent.student_id || 'N/A'}</div>
+                      <div><strong>Grade &amp; Section:</strong> {activeStudent.grade || 'Grade 10'} - {activeStudent.section || 'General'}</div>
+                      <div><strong>Conference Date:</strong> {formattedConfDate}</div>
+                    </> : <>
+                      <div><strong>TO:</strong> {parentName.toUpperCase()}</div>
+                      <div><strong>Parent / Legal Guardian of:</strong> {studentFullName}</div>
+                      <div><strong>Grade &amp; Section:</strong> {activeStudent.grade || 'Grade 10'} - {activeStudent.section || 'General'} | <strong>Student ID:</strong> {activeStudent.student_id || activeStudent.student_id || 'N/A'}</div>
+                    </>}
                   </div>
 
+                  {conferenceMode ? (
+                    <div className="psm-letter-text">
+                      <section style={{ marginBottom: '12px' }}><h4 style={{ margin: '0 0 5px', fontSize: '12px', fontWeight: 800 }}>I. Purpose of Conference</h4><p>{conferencePurpose}</p></section>
+                      <section style={{ marginBottom: '12px' }}><h4 style={{ margin: '0 0 5px', fontSize: '12px', fontWeight: 800 }}>II. Violation Discussed</h4><p>{activeViolations.map(v => v.violation?.title || v.offense || 'Disciplinary infraction').join(', ')}</p></section>
+                      <section style={{ marginBottom: '12px' }}><h4 style={{ margin: '0 0 5px', fontSize: '12px', fontWeight: 800 }}>III. Discussion Summary</h4><p>{conferenceDiscussion}</p></section>
+                      <section style={{ marginBottom: '12px' }}><h4 style={{ margin: '0 0 5px', fontSize: '12px', fontWeight: 800 }}>IV. Agreed Actions</h4><p>{conferenceActions}</p></section>
+                      <div className="psm-conf-card"><div className="psm-conf-grid">
+                        <div className="psm-conf-item"><strong>Conference Stage:</strong><span>{record?.status || 'Conference'}</span></div>
+                        <div className="psm-conf-item"><strong>Follow-up Date:</strong><span>{conferenceFollowUpDate ? new Date(`${conferenceFollowUpDate}T00:00:00`).toLocaleDateString() : 'To be scheduled'}</span></div>
+                        {conferenceRemarks && <div className="psm-conf-item" style={{ gridColumn: '1 / -1' }}><strong>Additional Remarks:</strong><span>{conferenceRemarks}</span></div>}
+                      </div></div>
+                      <div className="psm-signatures-row" style={{ marginTop: '22px' }}>
+                        <div className="psm-sig-line">{signatory1Signature && <img src={signatory1Signature} alt={`${signatory1Name} signature`} style={{ position: 'absolute', left: 0, bottom: '100%', width: '150px', height: '34px', objectFit: 'contain', objectPosition: 'left bottom' }} />}<strong style={{ fontSize: '12px', display: 'block', color: '#0f172a' }}>{signatory1Name}</strong><span style={{ fontSize: '10.5px', color: '#64748b', display: 'block' }}>{signatory1Title}</span></div>
+                        {includeSignatory2 && <div className="psm-sig-line">{signatory2Signature && <img src={signatory2Signature} alt={`${signatory2Name} signature`} style={{ position: 'absolute', left: 0, bottom: '100%', width: '150px', height: '34px', objectFit: 'contain', objectPosition: 'left bottom' }} />}<strong style={{ fontSize: '12px', display: 'block', color: '#0f172a' }}>{signatory2Name}</strong><span style={{ fontSize: '10.5px', color: '#64748b', display: 'block' }}>{signatory2Title}</span></div>}
+                      </div>
+                    </div>
+                  ) : (
+                  <>
                   {/* Letter Body: Dynamically handles 1 or multiple violations */}
                   <div className="psm-letter-text">
                     <p style={{ margin: '0 0 8px 0' }}>Dear Mr. / Mrs. / Ms. <strong>{parentName}</strong>,</p>
@@ -2463,6 +2620,8 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
                       <span>Date Signed: _______________</span>
                     </div>
                   </div>
+                  </>
+                  )}
                 </div>
               </div>
             </div>
@@ -2473,7 +2632,7 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
         {/* Modal Footer Controls (Desktop) */}
         <div className="psm-footer">
           <span className="psm-footer-text" style={{ fontSize: '12.5px', color: 'var(--text-secondary, #64748b)' }}>
-            {activeViolations.length} infraction{activeViolations.length > 1 ? 's' : ''} bundled into this official conference notice.
+            {conferenceMode ? 'Edit the report details and print the conference summary.' : `${activeViolations.length} infraction${activeViolations.length > 1 ? 's' : ''} bundled into this official conference notice.`}
           </span>
 
           <div className="psm-footer-actions">
@@ -2491,7 +2650,7 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
               onClick={handlePrint}
             >
               <Printer size={15} color="currentColor" />
-              <span>Print Letter</span>
+              <span>{conferenceMode ? 'Print Report' : 'Print Letter'}</span>
             </button>
 
             <button
@@ -2549,7 +2708,7 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
           type="button"
           className="psm-mobile-fab"
           onClick={() => setIsMobileDrawerOpen(true)}
-          title="Edit Summons Details"
+          title={conferenceMode ? 'Edit Conference Details' : 'Edit Summons Details'}
         >
           <SlidersHorizontal size={20} strokeWidth={2.4} />
         </button>
@@ -2567,7 +2726,7 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <SlidersHorizontal size={18} color="#0f172a" />
                 <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
-                  Edit Summons Details
+                  {conferenceMode ? 'Edit Conference Details' : 'Edit Summons Details'}
                 </h4>
               </div>
               <button

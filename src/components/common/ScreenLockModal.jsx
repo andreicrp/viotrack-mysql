@@ -153,7 +153,7 @@ export const ScreenLockModal = () => {
           <h2 style={{ margin: '0 0 2px', color: 'var(--text-primary, #0f172a)', fontSize: '18px', fontWeight: 800 }}>
             {userName}
           </h2>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '3px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5px', marginTop: '3px' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>
               {isAdmin ? 'System Administrator' : 'Faculty Member'}
             </span>

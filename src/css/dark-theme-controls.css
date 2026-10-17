@@ -251,10 +251,15 @@
   color: #94a3b8 !important;
 }
 
+[data-theme="dark"] .profile-legal-link {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
 @media (max-width: 768px) {
   [data-theme="dark"] .profile-bottom-actions-bar {
-    background: rgba(15, 23, 42, 0.92) !important;
-    border-color: rgba(51, 65, 85, 0.75) !important;
+    background: #080808 !important;
+    border-color: #202020 !important;
     box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.6) !important;
   }
 }
@@ -1252,4 +1257,3 @@ html[data-theme="dark"] body .advisers-empty-state p {
 [data-theme="dark"] .student-violation-detail-page .responsive-table-desktop td {
   border-color: #202020 !important;
 }
-

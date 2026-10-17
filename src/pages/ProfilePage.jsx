@@ -658,39 +658,33 @@ export const ProfilePage = () => {
                 <div className="profile-card-icon">
                   <Clock size={18} />
                 </div>
-                <div>
+                <div className="profile-card-header-copy">
                   <h3 className="profile-card-title">
                     Workstation Inactivity Auto-Logout
                   </h3>
                   <p className="profile-card-subtitle">
                     Prevent unauthorized student access on unattended faculty workstations
                   </p>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ fontSize: '12.5px', color: 'var(--text-secondary, #475569)', lineHeight: 1.45 }}>
+              <div className="profile-security-settings">
+                <p className="profile-security-description">
                   Automatically signs out after 30 minutes without keyboard, mouse, or touch activity. This protects student records on unattended devices.
-                </div>
+                </p>
 
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-surface-elevated, #f8fafc)', border: '1px solid var(--border-subtle, #e2e8f0)', padding: '10px 14px', borderRadius: '10px', marginTop: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Shield size={16} color="var(--brand-blue, #07345f)" />
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary, #0f172a)' }}>
-                        Current Policy: Automatic sign-out after 30 minutes idle
-                      </span>
-                    </div>
-                    <CheckCircle2 size={16} color="#16a34a" aria-label="Enabled" />
+                <div className="profile-security-policy">
+                  <div className="profile-security-row-copy">
+                    <Shield size={16} color="var(--brand-blue, #07345f)" aria-hidden="true" />
+                    <span>Current Policy: Automatic sign-out after 30 minutes idle</span>
                   </div>
-                </div>
+                  <CheckCircle2 size={16} color="#16a34a" aria-label="Enabled" />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-surface-elevated, #f8fafc)', border: '1px solid var(--border-subtle, #e2e8f0)', padding: '10px 14px', borderRadius: '10px', marginTop: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Shield size={16} color="var(--brand-blue, #07345f)" />
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary, #0f172a)' }}>
-                      Manual screen lock is also available
-                    </span>
+                <div className="profile-security-lock-row">
+                  <div className="profile-security-row-copy">
+                    <Shield size={16} color="var(--brand-blue, #07345f)" aria-hidden="true" />
+                    <span>Manual screen lock is also available</span>
                   </div>
                   <button
                     type="button"
@@ -698,19 +692,7 @@ export const ProfilePage = () => {
                       success('Workstation manually locked.');
                       lockScreen();
                     }}
-                    style={{
-                      background: 'var(--brand-blue, #07345f)',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '7px',
-                      fontSize: '11.5px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px'
-                    }}
+                    className="profile-security-lock-button"
                   >
                     <Lock size={12} /> Lock Now
                   </button>
@@ -883,6 +865,7 @@ export const ProfilePage = () => {
         <button
           type="button"
           onClick={() => setIsPrivacyModalOpen(true)}
+          className="profile-legal-link"
           style={{
             background: 'none',
             border: 'none',

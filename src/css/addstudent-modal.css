@@ -279,6 +279,26 @@
 }
 
 /* Responsive */
+@media (max-width: 480px) {
+    .add-student-privacy-consent {
+        padding: 8px 12px !important;
+        gap: 7px !important;
+        font-size: 10px !important;
+        line-height: 1.35 !important;
+    }
+
+    .add-student-privacy-icon {
+        width: 20px !important;
+        height: 20px !important;
+        border-radius: 5px !important;
+    }
+
+    .add-student-privacy-icon svg {
+        width: 12px;
+        height: 12px;
+    }
+}
+
 @media (max-width: 768px) {
     .add-modal-overlay {
         padding: 10px;

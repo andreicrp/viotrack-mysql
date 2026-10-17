@@ -2048,6 +2048,21 @@ html[data-theme="dark"] body .approve-incident-dialog .approve-incident-severity
   border-color: #ffffff !important;
 }
 
+[data-theme="dark"] .violation-types-page .violation-catalog-severity-badge.severity-minor {
+  background: rgba(34, 197, 94, 0.16) !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .violation-types-page .violation-catalog-severity-badge.severity-serious {
+  background: rgba(245, 158, 11, 0.16) !important;
+  color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .violation-types-page .violation-catalog-severity-badge.severity-major {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #f87171 !important;
+}
+
 [data-theme="dark"] .responsive-empty-state {
   background: #080808 !important;
   border-color: #303030 !important;
@@ -2060,4 +2075,13 @@ html[data-theme="dark"] body .approve-incident-dialog .approve-incident-severity
 
 [data-theme="dark"] .violation-types-page .violation-catalog-list-card > div > div > span:first-child {
   color: #f5f5f5 !important;
+}
+
+html[data-theme="dark"] body .violation-types-page .violation-catalog-detail-panel {
+  background: #0a0a0a !important;
+  border-color: #303030 !important;
+}
+
+html[data-theme="dark"] body .violation-types-page .violation-catalog-mobile-actions {
+  border-top-color: #303030 !important;
 }

@@ -1682,6 +1682,7 @@ export const ForApprovalPage = () => {
         const vType = (inspectRecord.violation?.type || 'Minor').toLowerCase();
         const isMajor = vType.includes('major');
         const isSerious = vType.includes('serious');
+        const sevBadge = getSeverityBadge(inspectRecord.violation?.type);
 
         const severityBg = isMajor ? '#fef2f2' : isSerious ? '#fffbeb' : '#eff6ff';
         const severityText = isMajor ? '#dc2626' : isSerious ? '#d97706' : '#2563eb';
@@ -1695,6 +1696,7 @@ export const ForApprovalPage = () => {
             title="Incident Report Details"
             icon={FileText}
             maxWidth="620px"
+            dialogClassName="approve-incident-dialog"
           >
             <div className="approval-inspection-dialog" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '16px 20px 20px 20px' }}>
               
@@ -1762,7 +1764,7 @@ export const ForApprovalPage = () => {
                 {/* Status Badge */}
                 <div>
                   <span
-                    className={`approve-incident-severity-badge ${sevBadge.className}`}
+                    className={`approve-incident-severity-badge ${sevBadge?.className || ''}`}
                     style={{
                       fontSize: '11.5px',
                       fontWeight: 600,

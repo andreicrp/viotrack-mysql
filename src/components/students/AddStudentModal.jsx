@@ -8,6 +8,7 @@ import { SectionSelect } from '../common/SectionSelect';
 import { StudentInitialsAvatar } from './StudentInitialsAvatar';
 import { validateUploadedFile } from '../../utils/security';
 import { getStudentPhoto } from '../../utils/studentPhoto';
+import '../../css/addstudent-modal.css';
 
 const isJHSGrade = (gradeStr) => {
   const num = parseInt((gradeStr || '').replace(/\D/g, ''), 10);
@@ -637,6 +638,7 @@ export const AddStudentModal = ({ isOpen, onClose, studentToEdit = null, onSaved
 
         {/* Data Privacy & DepEd Consent Notice */}
         <div
+          className="add-student-privacy-consent"
           style={{
             padding: '10px 24px',
             background: 'var(--bg-surface-elevated, #f8fafc)',
@@ -650,6 +652,7 @@ export const AddStudentModal = ({ isOpen, onClose, studentToEdit = null, onSaved
           }}
         >
           <div
+            className="add-student-privacy-icon"
             style={{
               width: '24px',
               height: '24px',
@@ -664,7 +667,7 @@ export const AddStudentModal = ({ isOpen, onClose, studentToEdit = null, onSaved
           >
             <ShieldCheck size={14} color="#34d399" strokeWidth={2.5} />
           </div>
-          <div style={{ flex: 1 }}>
+          <div className="add-student-privacy-copy" style={{ flex: 1 }}>
             <span style={{ fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>Data Privacy Consent (RA 10173): </span>
             <span>By registering this student record, you certify that personal and contact details are collected strictly for legitimate academic administration, emergency guardian dispatch, and DepEd conduct records.</span>
           </div>

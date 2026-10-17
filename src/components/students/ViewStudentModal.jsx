@@ -13,8 +13,7 @@ import {
   Calendar,
   Sparkles,
   ExternalLink,
-  ShieldCheck,
-  CheckCircle2
+  ShieldCheck
 } from 'lucide-react';
 import { lockBodyScroll, unlockBodyScroll } from '../../utils/scrollLock';
 import { StudentInitialsAvatar } from './StudentInitialsAvatar';
@@ -91,9 +90,6 @@ export const ViewStudentModal = ({ isOpen, onClose, student }) => {
                 className="student-hero-avatar"
                 style={{ fontSize: '20px' }}
               />
-              <span className="student-avatar-badge" title="Active Student">
-                <CheckCircle2 size={13} />
-              </span>
             </div>
 
             <div className="student-hero-meta">

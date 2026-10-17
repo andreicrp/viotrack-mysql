@@ -5,6 +5,7 @@ import { BulkViolationModal } from '../components/violations/BulkViolationModal'
 import { ResolutionModal } from '../components/violations/ResolutionModal';
 import { StatusModal } from '../components/violations/StatusModal';
 import { ParentSummonsModal } from '../components/violations/ParentSummonsModal';
+import { ConferenceSummaryModal } from '../components/violations/ConferenceSummaryModal';
 import { CustomDatePicker } from '../components/common/CustomDatePicker';
 import { CustomSelect } from '../components/common/CustomSelect';
 import { CompactPagination } from '../components/common/CompactPagination';
@@ -68,6 +69,7 @@ export const ViolationsPage = () => {
       setRecordForStatusChange(null);
       setSelectedRecordForResolution(null);
       setSummonsTargetRecord(null);
+      setConferenceReportRecord(null);
       setSaveAsModalOpen(false);
     }
   });
@@ -96,6 +98,7 @@ export const ViolationsPage = () => {
   const [recordForStatusChange, setRecordForStatusChange] = useState(null);
   const [selectedRecordForResolution, setSelectedRecordForResolution] = useState(null);
   const [summonsTargetRecord, setSummonsTargetRecord] = useState(null);
+  const [conferenceReportRecord, setConferenceReportRecord] = useState(null);
 
   const isAdmin = user?.role === 'admin';
 
@@ -1455,7 +1458,7 @@ export const ViolationsPage = () => {
         )}
 
         {/* Incidents Cards (Mobile View) */}
-        <div className={`responsive-cards-mobile tablet-list-cards ${viewMode === 'grid' ? 'grid-view' : 'list-view'} ${!loading && paginatedRecords.length === 0 ? 'force-hidden' : ''}`}>
+        <div className={`responsive-cards-mobile tablet-list-cards violations-mobile-cards ${viewMode === 'grid' ? 'grid-view' : 'list-view'} ${!loading && paginatedRecords.length === 0 ? 'force-hidden' : ''}`}>
           {loading ? (
             <div style={{ gridColumn: '1 / -1', width: '100%' }}>
               <SkeletonCardGrid cards={6} />
@@ -1693,10 +1696,10 @@ export const ViolationsPage = () => {
                       {isAdmin && isConferenceStatus(rec.status) && (
                         <button
                           type="button"
-                          onClick={() => setRecordForStatusChange(rec)}
+                          onClick={() => setConferenceReportRecord(rec)}
                           className="violation-list-action-btn violation-action-button violation-conference-edit-action"
-                          title="Choose a conference stage"
-                          aria-label={`Choose a conference stage; current stage is ${getConferenceTitle(rec.status)}`}
+                          title={`View and edit ${getConferenceTitle(rec.status)} summary`}
+                          aria-label={`View and edit ${getConferenceTitle(rec.status)} summary`}
                           style={{
                             flex: 1,
                             height: '38px',
@@ -1714,7 +1717,7 @@ export const ViolationsPage = () => {
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          <Users size={14} strokeWidth={2.2} /> Conference
+                          <Users size={14} strokeWidth={2.2} /> {getConferenceTitle(rec.status)}
                         </button>
                       )}
                       {isAdmin && (
@@ -1908,6 +1911,15 @@ export const ViolationsPage = () => {
           onClose={() => setSummonsTargetRecord(null)}
           record={summonsTargetRecord}
           student={summonsTargetRecord.student}
+          records={records}
+        />
+      )}
+
+      {isAdmin && conferenceReportRecord && (
+        <ConferenceSummaryModal
+          isOpen={!!conferenceReportRecord}
+          onClose={() => setConferenceReportRecord(null)}
+          record={conferenceReportRecord}
           records={records}
         />
       )}

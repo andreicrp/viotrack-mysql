@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { getJsPDF } from '../utils/pdfHelper';
 import { getStudentQrCodeUrl } from '../utils/qrHelper';
+import { BrandedStudentQr } from '../components/common/BrandedStudentQr';
 
 export const StudentViolationDetailPage = () => {
   const { id } = useParams();
@@ -822,20 +823,6 @@ export const StudentViolationDetailPage = () => {
                   boxShadow: 'none'
                 }}
               />
-              <span
-                style={{
-                  position: 'absolute',
-                  bottom: 3,
-                  right: 3,
-                  width: 18,
-                  height: 18,
-                  borderRadius: '50%',
-                  background: '#10b981',
-                  border: '3px solid var(--bg-surface, #ffffff)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-                }}
-                title="Officially Enrolled"
-              />
             </div>
 
             <div style={{ minWidth: 0 }}>
@@ -1021,7 +1008,7 @@ export const StudentViolationDetailPage = () => {
             >
               <div id="qrcode" style={{ width: '155px', height: '155px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ffffff', padding: '6px', borderRadius: '10px' }}>
                 {qrUrl ? (
-                  <img
+                  <BrandedStudentQr
                     src={qrUrl}
                     alt={`QR Pass for ${student.student_id}`}
                     style={{
@@ -2324,7 +2311,7 @@ export const StudentViolationDetailPage = () => {
                 }}
               >
                 {qrUrl ? (
-                  <img
+                  <BrandedStudentQr
                     src={qrUrl}
                     alt={`QR Pass for ${student.student_id}`}
                     style={{ width: '180px', height: '180px', display: 'block' }}

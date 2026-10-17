@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
 import {
-  UserCheck,
   X,
   Check,
   ShieldAlert,
@@ -50,7 +49,7 @@ export const ScannedStudentModal = ({
     if (!isDragging) return;
     setIsDragging(false);
     const diff = currentYRef.current - startYRef.current;
-    if (diff > 110) {
+    if (diff > 80) {
       onClose();
     }
     setDragOffset(0);
@@ -76,6 +75,7 @@ export const ScannedStudentModal = ({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
           title="Drag down to close"
         >
           <div className="modal-drag-handle" />
@@ -86,11 +86,9 @@ export const ScannedStudentModal = ({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         >
           <div className="student-scan-modal-title-group">
-            <div className="modal-header-icon-badge">
-              <UserCheck size={18} />
-            </div>
             <div>
               <h3 className="student-scan-modal-title">Student Identified</h3>
               <p className="student-scan-modal-subtitle">Official Student Conduct Summary</p>

@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   PieChart as PieChartIcon,
   TrendingDown,
-  RefreshCw,
   UsersRound,
   BarChart3,
   Printer
@@ -768,17 +767,6 @@ export const DashboardPage = () => {
               <h1 className="dash-greeting-title">
                 Hi, {user?.name || 'System Admin'}
               </h1>
-              {/* Refresh dashboard data */}
-              <button
-                type="button"
-                className={`dash-refresh-indicator ${isRefreshing ? 'spinning' : ''}`}
-                onClick={refreshDashboard}
-                disabled={isRefreshing}
-                title={isRefreshing ? 'Refreshing dashboard…' : 'Refresh dashboard'}
-                aria-label={isRefreshing ? 'Refreshing dashboard' : 'Refresh dashboard'}
-              >
-                <RefreshCw size={13} strokeWidth={2.4} aria-hidden="true" />
-              </button>
             </div>
             {/* At-a-glance summary sentence */}
             <p className="dash-greeting-subtitle">

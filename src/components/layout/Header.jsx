@@ -178,9 +178,9 @@ export const Header = ({ onToggleSidebar, onOpenCommandPalette }) => {
           }}
         >
           <div className="logo-icon" draggable={false}>
-            <img src="/images/phcm-logo.png" alt="VioTrack Logo" draggable={false} />
+            <img src="/images/viotrack-logo-nobg.png" alt="VioTrack Logo" draggable={false} />
           </div>
-          <span className="logo-text" draggable={false}>VIOTRACK</span>
+          <span className="logo-text" draggable={false}>VIOTRACK MANILA</span>
         </a>
         <a
           href="/"
@@ -191,7 +191,7 @@ export const Header = ({ onToggleSidebar, onOpenCommandPalette }) => {
             navigate('/');
           }}
         >
-          VIOTRACK
+          VIOTRACK MANILA
         </a>
       </div>
 

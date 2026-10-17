@@ -119,6 +119,18 @@ const NativeStatusBarTheme = () => {
   return null;
 };
 
+const ScrollToTop = () => {
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) mainContent.scrollTop = 0;
+  }, [pathname, search]);
+
+  return null;
+};
+
 export const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const { user, isAuthenticated, loading } = useAuth();
   const location = useLocation();
@@ -165,6 +177,7 @@ export function App() {
               />
             )}
             <BrowserRouter>
+              <ScrollToTop />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                 {/* Public Auth & Student ID Pass Routes */}
