@@ -122,6 +122,122 @@
     border-color: #3b82f6;
 }
 
+/* Compact directory cards shared by the teacher and admin pages */
+.teacher-mobile-list-card,
+.admin-mobile-list-card {
+    padding: 12px 14px !important;
+    gap: 8px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+}
+
+.teacher-mobile-list-card .student-initials-avatar,
+.admin-mobile-list-card .student-initials-avatar {
+    width: 42px !important;
+    height: 42px !important;
+    flex: 0 0 42px !important;
+    font-size: 12px !important;
+}
+
+.teacher-mobile-list-name,
+.admin-mobile-list-name {
+    font-size: 15px !important;
+}
+
+.teacher-mobile-list-details {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+    align-items: center;
+    gap: 10px !important;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    min-width: 0;
+}
+
+.teacher-mobile-list-details > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.teacher-mobile-list-details > div:last-child {
+    gap: 6px !important;
+}
+
+.teacher-mobile-list-details > div:last-child span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-mobile-list-email {
+    min-width: 0;
+    padding: 9px 12px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+}
+
+.admin-mobile-list-email span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.teacher-mobile-list-actions,
+.admin-mobile-list-actions {
+    gap: 8px !important;
+    padding-top: 6px !important;
+    border-color: #e2e8f0 !important;
+}
+
+.teacher-mobile-list-actions > button,
+.admin-mobile-list-actions > button {
+    min-height: 34px;
+    padding: 6px 10px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    gap: 5px !important;
+}
+
+.teacher-mobile-list-actions > button svg,
+.admin-mobile-list-actions > button svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+    .teacher-mobile-list-details {
+        grid-template-columns: 1fr;
+        gap: 6px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .teacher-mobile-list-actions,
+    .admin-mobile-list-actions {
+        flex-wrap: wrap;
+    }
+
+    .teacher-mobile-list-actions > button,
+    .admin-mobile-list-actions > button {
+        flex: 1 1 calc(50% - 4px);
+        justify-content: center;
+    }
+}
+
+[data-theme="dark"] .teacher-mobile-list-details,
+[data-theme="dark"] .admin-mobile-list-email {
+    background: #101010 !important;
+    border-color: #303030 !important;
+}
+
+[data-theme="dark"] .teacher-mobile-list-actions,
+[data-theme="dark"] .admin-mobile-list-actions {
+    border-color: #303030 !important;
+}
+
 .search-control {
     display: flex;
     align-items: center;

@@ -1,5 +1,427 @@
 /* violation-record.css */
 
+.violations-page .responsive-cards-mobile.list-view {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0 !important;
+}
+
+.student-violation-detail-page .student-violation-record-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 0;
+    width: 100%;
+}
+
+.violations-page .responsive-cards-mobile.list-view .violation-list-mobile-card {
+    width: 100%;
+    min-width: 0;
+    padding: 12px 16px !important;
+    border-radius: 12px !important;
+    gap: 8px !important;
+    border: 1px solid #e2e8f0;
+    outline: none !important;
+}
+
+/* Violation Record List Mobile Card Outline & Theme */
+.violations-page .responsive-cards-mobile.list-view .violation-list-mobile-card,
+.student-violation-mobile-card {
+    border-radius: 16px !important;
+    border: 1px solid #e2e8f0;
+    outline: none !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+    transition: all 0.2s ease;
+}
+
+html[data-theme="dark"] body .violations-page .responsive-cards-mobile.list-view .violation-list-mobile-card,
+html[data-theme="dark"] body .student-violation-mobile-card {
+    background: #050505 !important;
+    border: 1px solid #3a3a3a !important;
+    border-color: #3a3a3a !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"] body .violations-page .responsive-cards-mobile.list-view .violation-list-mobile-card.is-selected,
+html[data-theme="dark"] body .student-violation-mobile-card.is-selected {
+    background: #141414 !important;
+    border: 1.5px solid #4b4b4b !important;
+    border-color: #4b4b4b !important;
+}
+
+html[data-theme="dark"] body .student-violation-mobile-card {
+    background: #050505 !important;
+    border-color: #333333 !important;
+}
+
+html[data-theme="dark"] body .student-violation-mobile-card .violation-list-offense-panel {
+    background: #080808 !important;
+    border-color: #2a2a2a !important;
+}
+
+html[data-theme="dark"] body .student-violation-mobile-card .violation-conference-subcard {
+    background: #0a0a0a !important;
+    border-color: #303030 !important;
+}
+
+html[data-theme="dark"] body .student-violation-mobile-card .violation-conference-divider {
+    background: #ffffff !important;
+}
+
+html[data-theme="dark"] body .violation-conference-subcard > div:first-child > svg.lucide-users {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+}
+
+html[data-theme="dark"] body .student-violation-detail-page .student-record-status-trigger .record-status-pill--conference-first svg {
+    color: #7dd3fc !important;
+    stroke: #7dd3fc !important;
+}
+
+html[data-theme="dark"] body .student-violation-detail-page .student-record-status-trigger .record-status-pill--conference-second svg {
+    color: #fcd34d !important;
+    stroke: #fcd34d !important;
+}
+
+html[data-theme="dark"] body .student-violation-detail-page .student-record-status-trigger .record-status-pill--conference-third svg {
+    color: #fca5a5 !important;
+    stroke: #fca5a5 !important;
+}
+
+/* Violation Details Offense Panel */
+.violation-list-offense-panel {
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 14px;
+}
+
+html[data-theme="dark"] body .violation-list-offense-panel {
+    background: #0f1319 !important;
+    border: 1px solid #232936 !important;
+}
+
+html[data-theme="dark"] body .violation-list-offense-panel .violation-detail-label {
+    color: #8b9bb4 !important;
+}
+
+html[data-theme="dark"] body .violation-list-offense-panel .violation-detail-value {
+    color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] body .violation-list-offense-panel .violation-detail-icon {
+    color: #8b9bb4 !important;
+}
+
+@media (max-width: 760px) {
+    .violations-page .violation-student-detail-value {
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: normal !important;
+        line-height: 1.35;
+    }
+
+    .violations-page .violation-student-meta {
+        display: block;
+        overflow-wrap: anywhere;
+        line-height: 1.35;
+    }
+}
+
+/* Violation Conference & Status Subcard */
+.violation-conference-subcard {
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    flex-wrap: wrap;
+}
+
+.violation-conference-subcard > div:first-child {
+    flex: 1 1 150px;
+    min-width: 0;
+}
+
+.violation-conference-subcard > div:last-child {
+    margin-left: auto;
+}
+
+.violation-conference-subcard .violation-conference-divider {
+    display: none;
+}
+
+@media (max-width: 760px) {
+    .violation-conference-subcard {
+        align-items: center !important;
+        flex-wrap: nowrap;
+    }
+
+    .violation-conference-subcard > div:first-child {
+        flex: 1 1 0%;
+        min-width: 0;
+    }
+
+    .violation-conference-subcard > div:last-child {
+        margin-left: auto;
+        flex: 0 0 auto;
+        justify-content: flex-end;
+    }
+
+    .violation-conference-subcard .violation-conference-title,
+    .violation-conference-subcard .violation-conference-date {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+html[data-theme="dark"] body .violation-conference-subcard {
+    background: #080808 !important;
+    border: 1px solid #303030 !important;
+}
+
+html[data-theme="dark"] body .violation-conference-subcard .violation-conference-title {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] body .violation-conference-subcard .violation-conference-date {
+    color: #8b9bb4 !important;
+}
+
+html[data-theme="dark"] body .violations-page .violation-conference-subcard .violation-conference-divider,
+html[data-theme="dark"] body .student-violation-detail-page .violation-conference-subcard .violation-conference-divider {
+    background: #ffffff !important;
+}
+
+/* Severity Badge Pills */
+.violation-severity-pill {
+    text-transform: capitalize;
+    letter-spacing: 0.01em;
+}
+
+html[data-theme="dark"] body .violation-severity-pill.severity-major {
+    background: rgba(225, 29, 72, 0.16) !important;
+    border-color: rgba(244, 63, 94, 0.35) !important;
+    color: #fda4af !important;
+}
+
+html[data-theme="dark"] body .violation-severity-pill.severity-serious {
+    background: rgba(217, 119, 6, 0.16) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+    color: #fcd34d !important;
+}
+
+html[data-theme="dark"] body .violation-severity-pill.severity-minor {
+    background: rgba(22, 163, 74, 0.16) !important;
+    border-color: rgba(34, 197, 94, 0.35) !important;
+    color: #86efac !important;
+}
+
+/* ==========================================================================
+   Violation Record Bottom Action Buttons (Remain Color in Light & Dark Mode)
+   ========================================================================== */
+
+/* Light Theme Action Buttons */
+.violation-list-mobile-actions .violation-summons-action {
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    color: #1d4ed8 !important;
+}
+.violation-list-mobile-actions .violation-summons-action svg {
+    color: #1d4ed8 !important;
+    stroke: #1d4ed8 !important;
+}
+.violation-list-mobile-actions .violation-summons-action:hover {
+    background: #dbeafe !important;
+    border-color: #93c5fd !important;
+}
+
+.violation-list-mobile-actions .violation-proof-action {
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+    color: #15803d !important;
+}
+.violation-list-mobile-actions .violation-proof-action svg {
+    color: #15803d !important;
+    stroke: #15803d !important;
+}
+.violation-list-mobile-actions .violation-proof-action:hover {
+    background: #dcfce7 !important;
+    border-color: #86efac !important;
+}
+
+.violation-list-mobile-actions .violation-action-delete,
+.violation-list-mobile-actions .student-violation-card-delete-btn {
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #dc2626 !important;
+}
+.violation-list-mobile-actions .violation-action-delete svg,
+.violation-list-mobile-actions .student-violation-card-delete-btn svg {
+    color: #dc2626 !important;
+    stroke: #dc2626 !important;
+}
+.violation-list-mobile-actions .violation-action-delete:hover,
+.violation-list-mobile-actions .student-violation-card-delete-btn:hover {
+    background: #fee2e2 !important;
+    border-color: #fca5a5 !important;
+}
+
+/* Dark Theme Action Buttons - Retain rich vibrant hues */
+html[data-theme="dark"] body .violation-list-mobile-actions .violation-summons-action {
+    background: #ffffff !important;
+    border: 1px solid #ffffff !important;
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+}
+html[data-theme="dark"] body .violation-list-mobile-actions .violation-summons-action svg {
+    color: #111111 !important;
+    stroke: #111111 !important;
+}
+html[data-theme="dark"] body .violation-list-mobile-actions .violation-summons-action:hover {
+    background: #e5e5e5 !important;
+    border-color: #e5e5e5 !important;
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+}
+
+html[data-theme="dark"] body .violation-list-mobile-actions .violation-proof-action {
+    background: rgba(20, 83, 45, 0.25) !important;
+    border: 1px solid rgba(74, 222, 128, 0.45) !important;
+    color: #86efac !important;
+    -webkit-text-fill-color: #86efac !important;
+}
+html[data-theme="dark"] body .violation-list-mobile-actions .violation-proof-action svg {
+    color: #86efac !important;
+    stroke: #86efac !important;
+}
+html[data-theme="dark"] body .violation-list-mobile-actions .violation-proof-action:hover {
+    background: rgba(20, 83, 45, 0.4) !important;
+    border-color: rgba(134, 239, 172, 0.6) !important;
+    color: #bbf7d0 !important;
+}
+
+html[data-theme="dark"] body .violations-page .violation-list-mobile-actions .violation-proof-action,
+html[data-theme="dark"] body .violations-page .violation-list-mobile-actions .violation-proof-action:hover,
+html[data-theme="dark"] body .violations-page .violation-list-mobile-actions .violation-proof-action:focus-visible {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+}
+
+html[data-theme="dark"] body .violations-page .violation-list-mobile-actions .violation-proof-action svg {
+    color: #111111 !important;
+    stroke: #111111 !important;
+}
+
+html[data-theme="dark"] body .violation-list-mobile-actions .violation-action-delete,
+html[data-theme="dark"] body .violation-list-mobile-actions .student-violation-card-delete-btn {
+    background: rgba(153, 27, 27, 0.25) !important;
+    border: 1px solid rgba(248, 113, 113, 0.45) !important;
+    color: #fca5a5 !important;
+    -webkit-text-fill-color: #fca5a5 !important;
+}
+html[data-theme="dark"] body .violation-list-mobile-actions .violation-action-delete svg,
+html[data-theme="dark"] body .violation-list-mobile-actions .student-violation-card-delete-btn svg {
+    color: #fca5a5 !important;
+    stroke: #fca5a5 !important;
+}
+html[data-theme="dark"] body .violation-list-mobile-actions .violation-action-delete:hover,
+html[data-theme="dark"] body .violation-list-mobile-actions .student-violation-card-delete-btn:hover {
+    background: rgba(153, 27, 27, 0.4) !important;
+    border-color: rgba(252, 165, 165, 0.6) !important;
+    color: #fecaca !important;
+}
+
+.violations-page .violation-list-mobile-actions .mobile-delete-label {
+    display: inline;
+    white-space: nowrap;
+}
+
+.violations-page .violation-list-mobile-actions {
+    gap: 8px !important;
+}
+
+.violations-page .violation-list-mobile-actions > button {
+    flex: 1 1 0% !important;
+    min-width: 0;
+    height: 38px !important;
+    padding: 0 4px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    gap: 4px !important;
+    white-space: nowrap;
+}
+
+.violations-page .violation-list-mobile-actions > button svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+    .violations-page .violation-list-mobile-actions {
+        flex-wrap: wrap;
+    }
+
+    .violations-page .violation-list-mobile-actions > button {
+        flex: 1 1 calc(50% - 4px) !important;
+        min-width: calc(50% - 4px);
+        justify-content: center;
+    }
+}
+
+.student-violation-detail-page .violation-list-mobile-actions .mobile-delete-label {
+    display: inline;
+    white-space: nowrap;
+}
+
+html[data-theme="dark"] body .violations-page .violation-list-mobile-actions .violation-action-delete,
+html[data-theme="dark"] body .violations-page .violation-list-mobile-actions .violation-action-delete:hover,
+html[data-theme="dark"] body .violations-page .violation-list-mobile-actions .violation-action-delete:focus-visible {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border-color: #ffffff !important;
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+}
+
+html[data-theme="dark"] body .violations-page .violation-list-mobile-actions .violation-action-delete svg {
+    color: #111111 !important;
+    stroke: #111111 !important;
+}
+
+html[data-theme="dark"] body .student-violation-detail-page .violation-list-mobile-actions .student-violation-card-delete-btn,
+html[data-theme="dark"] body .student-violation-detail-page .violation-list-mobile-actions .student-violation-card-delete-btn:focus-visible,
+html[data-theme="dark"] body .student-violation-detail-page .violation-list-mobile-actions .student-violation-card-delete-btn:active {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"] body .student-violation-detail-page .violation-list-mobile-actions .student-violation-card-delete-btn:hover {
+    background: #e5e5e5 !important;
+    border-color: #bdbdbd !important;
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"] body .student-violation-detail-page .violation-list-mobile-actions .student-violation-card-delete-btn svg {
+    color: #111111 !important;
+    stroke: #111111 !important;
+}
+
+html[data-theme="dark"] body .student-violation-detail-page .violation-list-mobile-actions .student-violation-card-delete-btn:hover svg,
+html[data-theme="dark"] body .student-violation-detail-page .violation-list-mobile-actions .student-violation-card-delete-btn:focus-visible svg {
+    color: #111111 !important;
+    stroke: #111111 !important;
+}
+
 /* Violation Record Card */
 .violation-record-card {
     background: #fff;
@@ -1066,3 +1488,76 @@
         font-size: 9px;
     }
 }   
+.responsive-cards-mobile.grid-view .entity-grid-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 16px;
+  gap: 11px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.responsive-cards-mobile.grid-view .entity-grid-card:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+
+.responsive-cards-mobile.grid-view .entity-grid-card.is-selected {
+  background: #f8fbff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.16);
+}
+
+.responsive-cards-mobile.grid-view .entity-grid-meta {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 11px;
+}
+
+.responsive-cards-mobile.grid-view .entity-grid-actions {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 12px;
+}
+
+.responsive-cards-mobile.grid-view .entity-grid-top-badges input {
+  accent-color: #2563eb;
+}
+
+html[data-theme="dark"] body .responsive-cards-mobile.grid-view .entity-grid-card {
+  background: #101010 !important;
+  border: 1px solid #383838 !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+html[data-theme="dark"] body .responsive-cards-mobile.grid-view .entity-grid-card:hover {
+  background: #151515 !important;
+  border-color: #5a5a5a !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.42) !important;
+}
+
+html[data-theme="dark"] body .responsive-cards-mobile.grid-view .entity-grid-card.is-selected {
+  background: #242424 !important;
+  border-color: #737373 !important;
+  box-shadow: 0 0 0 2px rgba(163, 163, 163, 0.16) !important;
+}
+
+html[data-theme="dark"] body .responsive-cards-mobile.grid-view .entity-grid-meta {
+  background: #080808 !important;
+  border-color: #303030 !important;
+}
+
+html[data-theme="dark"] body .responsive-cards-mobile.grid-view .entity-grid-actions {
+  border-top-color: #303030 !important;
+}
+
+@media (max-width: 768px) {
+  .responsive-cards-mobile.grid-view .entity-grid-card {
+    padding: 12px 10px;
+    gap: 9px;
+  }
+
+  .responsive-cards-mobile.grid-view .entity-grid-meta {
+    padding: 8px;
+  }
+}

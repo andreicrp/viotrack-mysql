@@ -7,10 +7,6 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
 }
 
-[data-theme="dark"] .student-violation-mobile-card > div:first-child span {
-  color: #ffffff !important;
-}
-
 [data-theme="dark"] .student-violation-mobile-details {
   background: #111111 !important;
   border: 1px solid #222222 !important;
@@ -989,6 +985,17 @@ html[data-theme="dark"] body .adviser-btn-remove:hover path {
   background: #050505 !important;
 }
 
+[data-theme="dark"] .header-notif-empty-icon {
+  background: #10231b !important;
+  border: 1px solid #1f4938 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.32);
+}
+
+[data-theme="dark"] .header-notif-empty-icon svg {
+  color: #34d399 !important;
+  stroke: #34d399 !important;
+}
+
 [data-theme="dark"] .header-notif-empty-title {
   color: #f8fafc !important;
 }
@@ -1353,4 +1360,3 @@ html[data-theme="dark"] body .modal-btn-secondary:hover:not(:disabled) {
   color: #38bdf8 !important;
   border-color: #38bdf8 !important;
 }
-

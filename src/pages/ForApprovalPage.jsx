@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback, useDeferredValue } fr
 import { dataService } from '../services/dataService';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import { CompactPagination } from '../components/common/CompactPagination';
+import { LanguageToolTextarea } from '../components/common/LanguageToolTextarea';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -25,8 +27,6 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  ChevronLeft,
-  ChevronRight,
   Filter,
   AlertCircle,
   MessageSquare,
@@ -1027,7 +1027,7 @@ export const ForApprovalPage = () => {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 background: '#fffbeb',
-                                color: '#d97706',
+                                color: '#92400e',
                                 border: '1px solid #fde68a',
                                 padding: '4px 10px',
                                 borderRadius: '20px',
@@ -1200,7 +1200,7 @@ export const ForApprovalPage = () => {
                             padding: '2px 8px',
                             borderRadius: '20px',
                             background: isPending ? '#fffbeb' : isApproved ? '#f0fdf4' : '#fef2f2',
-                            color: isPending ? '#d97706' : isApproved ? '#16a34a' : '#dc2626',
+                            color: isPending ? '#92400e' : isApproved ? '#16a34a' : '#dc2626',
                             border: `1px solid ${isPending ? '#fde68a' : isApproved ? '#bbf7d0' : '#fecaca'}`
                           }}
                         >
@@ -1453,7 +1453,7 @@ export const ForApprovalPage = () => {
                               padding: '2px 8px',
                               borderRadius: '20px',
                               background: isPending ? '#fffbeb' : isApproved ? '#f0fdf4' : '#fef2f2',
-                              color: isPending ? '#d97706' : isApproved ? '#16a34a' : '#dc2626',
+                              color: isPending ? '#92400e' : isApproved ? '#16a34a' : '#dc2626',
                               border: `1px solid ${isPending ? '#fde68a' : isApproved ? '#bbf7d0' : '#fecaca'}`
                             }}
                           >
@@ -1554,41 +1554,7 @@ export const ForApprovalPage = () => {
             {Math.min(currentPage * entriesPerPage, filteredRecords.length)} of {filteredRecords.length} records
           </span>
 
-          {totalPages > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                style={{
-                  padding: '5px 9px',
-                  borderRadius: '6px',
-                  border: '1px solid #e2e8f0',
-                  background: '#ffffff',
-                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                  opacity: currentPage === 1 ? 0.5 : 1
-                }}
-              >
-                <ChevronLeft size={15} />
-              </button>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', padding: '0 6px' }}>
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                style={{
-                  padding: '5px 9px',
-                  borderRadius: '6px',
-                  border: '1px solid #e2e8f0',
-                  background: '#ffffff',
-                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                  opacity: currentPage === totalPages ? 0.5 : 1
-                }}
-              >
-                <ChevronRight size={15} />
-              </button>
-            </div>
-          )}
+          <CompactPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} ariaLabel="For approval pagination" />
         </div>
 
       </div>
@@ -2434,7 +2400,7 @@ export const ForApprovalPage = () => {
                 <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '6px' }}>
                   Feedback Notes (Optional)
                 </label>
-                <textarea
+                <LanguageToolTextarea
                   rows={3}
                   placeholder="Provide feedback notes to the reporting teacher..."
                   value={customRejectNote}

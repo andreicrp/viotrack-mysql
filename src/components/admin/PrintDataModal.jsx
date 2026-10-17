@@ -2264,6 +2264,10 @@ export const PrintDataModal = ({ isOpen, onClose, records = [], students = [], t
           user-select: none;
           margin-bottom: 20px;
           border: 1px solid #cbd5e1;
+          cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v16l4-4 3 6 3-1-3-6h6z' fill='%230f172a' stroke='%23fff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, grab !important;
+        }
+        .pdm-preview-paper.is-dragging {
+          cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v16l4-4 3 6 3-1-3-6h6z' fill='%230f172a' stroke='%23fff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, grabbing !important;
         }
 
         .pdm-canvas-toolbar {
@@ -2819,10 +2823,7 @@ export const PrintDataModal = ({ isOpen, onClose, records = [], students = [], t
                 {/* ================= LIVE PREVIEW PAGE 1 ================= */}
                 <div
                   ref={page1Ref}
-                  className="pdm-preview-paper"
-                  style={{
-                    cursor: isDragging ? 'grabbing' : 'default'
-                  }}
+                  className={`pdm-preview-paper${isDragging ? ' is-dragging' : ''}`}
                 >
                   {/* Official Letterhead */}
                   <div style={{ textAlign: 'center', borderBottom: '2px solid #07345f', paddingBottom: '8px', marginBottom: '8px' }}>
@@ -3127,10 +3128,7 @@ export const PrintDataModal = ({ isOpen, onClose, records = [], students = [], t
 
                       <div
                         ref={pIdx === 0 ? page2Ref : null}
-                        className="pdm-preview-paper"
-                        style={{
-                          cursor: isDragging ? 'grabbing' : 'default'
-                        }}
+                        className={`pdm-preview-paper${isDragging ? ' is-dragging' : ''}`}
                       >
                         {/* Full Official Letterhead on Page 2+ */}
                         <div style={{ textAlign: 'center', borderBottom: '2px solid #07345f', paddingBottom: '8px', marginBottom: '8px' }}>

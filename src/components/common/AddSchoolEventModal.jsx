@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { CustomDatePicker } from './CustomDatePicker';
+import { LanguageToolTextarea } from './LanguageToolTextarea';
 import { dataService } from '../../services/dataService';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -314,7 +315,7 @@ export const AddSchoolEventModal = ({ isOpen, onClose, initialDate, onEventSaved
             <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#475569', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
               Notes / Agenda (Optional)
             </label>
-            <textarea
+            <LanguageToolTextarea
               rows={2}
               placeholder="Brief agenda or important reminders..."
               value={formData.description}

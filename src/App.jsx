@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -11,30 +11,31 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { CookieConsentBanner } from './components/legal/CookieConsentBanner';
 import { ScreenLockModal } from './components/common/ScreenLockModal';
 import { dataService } from './services/dataService';
+import { lazyRetry } from './utils/lazyRetry';
 
 // Lazy Loaded Route Pages for Optimal Code-Splitting & Speed
-const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage || m.default })));
-const ViolationsPage = lazy(() => import('./pages/ViolationsPage').then(m => ({ default: m.ViolationsPage || m.default })));
-const ViolationTypesPage = lazy(() => import('./pages/ViolationTypesPage').then(m => ({ default: m.ViolationTypesPage || m.default })));
-const StudentsPage = lazy(() => import('./pages/StudentsPage').then(m => ({ default: m.StudentsPage || m.default })));
-const StudentViolationDetailPage = lazy(() => import('./pages/StudentViolationDetailPage').then(m => ({ default: m.StudentViolationDetailPage || m.default })));
-const MyClassPage = lazy(() => import('./pages/MyClassPage').then(m => ({ default: m.MyClassPage || m.default })));
-const ScanQRPage = lazy(() => import('./pages/ScanQRPage').then(m => ({ default: m.ScanQRPage || m.default })));
-const TeachersPage = lazy(() => import('./pages/TeachersPage').then(m => ({ default: m.TeachersPage || m.default })));
-const AdvisersPage = lazy(() => import('./pages/AdvisersPage').then(m => ({ default: m.AdvisersPage || m.default })));
-const TrackLocationPage = lazy(() => import('./pages/TrackLocationPage').then(m => ({ default: m.TrackLocationPage || m.default })));
-const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage || m.default })));
-const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage').then(m => ({ default: m.AdminUsersPage || m.default })));
-const ForApprovalPage = lazy(() => import('./pages/ForApprovalPage').then(m => ({ default: m.ForApprovalPage || m.default })));
-const ActivityLogsPage = lazy(() => import('./pages/ActivityLogsPage').then(m => ({ default: m.ActivityLogsPage || m.default })));
-const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage || m.default })));
-const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage || m.default })));
-const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage || m.default })));
-const VerifyStudentPage = lazy(() => import('./pages/VerifyStudentPage').then(m => ({ default: m.VerifyStudentPage || m.default })));
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage || m.default })));
-const ForbiddenPage = lazy(() => import('./pages/ForbiddenPage').then(m => ({ default: m.ForbiddenPage || m.default })));
+const DashboardPage = lazyRetry(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage || m.default })));
+const ViolationsPage = lazyRetry(() => import('./pages/ViolationsPage').then(m => ({ default: m.ViolationsPage || m.default })));
+const ViolationTypesPage = lazyRetry(() => import('./pages/ViolationTypesPage').then(m => ({ default: m.ViolationTypesPage || m.default })));
+const StudentsPage = lazyRetry(() => import('./pages/StudentsPage').then(m => ({ default: m.StudentsPage || m.default })));
+const StudentViolationDetailPage = lazyRetry(() => import('./pages/StudentViolationDetailPage').then(m => ({ default: m.StudentViolationDetailPage || m.default })));
+const MyClassPage = lazyRetry(() => import('./pages/MyClassPage').then(m => ({ default: m.MyClassPage || m.default })));
+const ScanQRPage = lazyRetry(() => import('./pages/ScanQRPage').then(m => ({ default: m.ScanQRPage || m.default })));
+const TeachersPage = lazyRetry(() => import('./pages/TeachersPage').then(m => ({ default: m.TeachersPage || m.default })));
+const AdvisersPage = lazyRetry(() => import('./pages/AdvisersPage').then(m => ({ default: m.AdvisersPage || m.default })));
+const TrackLocationPage = lazyRetry(() => import('./pages/TrackLocationPage').then(m => ({ default: m.TrackLocationPage || m.default })));
+const AdminDashboardPage = lazyRetry(() => import('./pages/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage || m.default })));
+const AdminUsersPage = lazyRetry(() => import('./pages/AdminUsersPage').then(m => ({ default: m.AdminUsersPage || m.default })));
+const ForApprovalPage = lazyRetry(() => import('./pages/ForApprovalPage').then(m => ({ default: m.ForApprovalPage || m.default })));
+const ActivityLogsPage = lazyRetry(() => import('./pages/ActivityLogsPage').then(m => ({ default: m.ActivityLogsPage || m.default })));
+const ProfilePage = lazyRetry(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage || m.default })));
+const NotificationsPage = lazyRetry(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage || m.default })));
+const LoginPage = lazyRetry(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage || m.default })));
+const VerifyStudentPage = lazyRetry(() => import('./pages/VerifyStudentPage').then(m => ({ default: m.VerifyStudentPage || m.default })));
+const NotFoundPage = lazyRetry(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage || m.default })));
+const ForbiddenPage = lazyRetry(() => import('./pages/ForbiddenPage').then(m => ({ default: m.ForbiddenPage || m.default })));
 import { ServerErrorPage } from './pages/ServerErrorPage';
-const ErrorTestPage = lazy(() => import('./pages/ErrorTestPage').then(m => ({ default: m.ErrorTestPage || m.default })));
+const ErrorTestPage = lazyRetry(() => import('./pages/ErrorTestPage').then(m => ({ default: m.ErrorTestPage || m.default })));
 
 // Lightweight Route Loading Spinner
 const PageLoader = () => {

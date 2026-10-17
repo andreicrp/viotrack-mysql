@@ -122,6 +122,8 @@ npm run prisma:seed
 
 Prisma migrations create the application schema and add later fields such as teacher specialization; the student schema includes track and strand. The seed creates the configured administrator and starter violation categories. QR signatures are issued and verified by the API, not by a key embedded in the frontend. Reprint badges using the new VT3 format; legacy VT1/VT2 signatures are no longer trusted. For an existing installation, back up and map/export the legacy data before migrating. `MYSql_vioTrack.sql` is an archival legacy dump with destructive statements; do not run it against a live database.
 
+If the `records_status_check` constraint is missing, apply `scripts/records_status_check_mysql.sql` with the VioTrack database selected. It converts a legacy `records.status` enum to `VARCHAR(30)` and enforces the supported statuses, including all three conference steps and `Escalated`. It is safe to re-run and requires MySQL 8.0.16+ or MariaDB 10.2.1+ for enforced `CHECK` constraints. Supabase's `supabase_realtime` publication is PostgreSQL-specific and is not used by this MySQL/Express app.
+
 For databases created directly from an older MySQL dump and not managed by Prisma Migrate, check the live schema and add only the missing columns before using the updated imports:
 ```sql
 ALTER TABLE `students`
@@ -134,18 +136,26 @@ ALTER TABLE `teachers`
 Prisma-managed databases receive the teacher specialization field through the checked-in migration. Do not run the SQL above for columns that already exist.
 
 ### 3. Start the API and frontend
-Run these in separate terminals and keep both terminals running while using the app:
-```bash
-npm run server:dev
-```
+Start both the API and frontend together with:
 ```bash
 npm run dev
 ```
-The app is available at `http://localhost:5173`; Vite proxies `/api` requests to the API at `http://localhost:3000`. For Capacitor, configure `VITE_API_BASE_URL` to the deployed HTTPS API origin and allow the app origin in `FRONTEND_ORIGINS` before building.
+Keep that terminal running while using the app. Vite serves the app at `http://localhost:5173` (or the next available port) and proxies `/api` requests to the API at `http://localhost:3000`. For Capacitor, configure `VITE_API_BASE_URL` to the deployed HTTPS API origin and allow the app origin in `FRONTEND_ORIGINS` before building.
 
 If port 5173 is already in use, run Vite on another local port, for example `npm run dev -- --host 127.0.0.1 --port 5174 --strictPort`. The API allows localhost and loopback IP origins on alternate ports in development. Production deployments must explicitly list frontend origins in `FRONTEND_ORIGINS`.
 
 Production: run `npm run build` and `npm run build:server`, then start the Node server with `npm run server:start`. It serves the built frontend and API from one origin.
+
+### Optional grammar and spelling checks
+The summons notes and resolution summary can use LanguageTool when `VITE_LANGUAGETOOL_API_URL` points to a trusted server. The app checks English (US) text after a short pause and sends only the contents of the active notes field to that endpoint. Do not configure a public service for student or case information; use an institution-controlled server. Leave the setting empty to keep checking disabled.
+
+For local Windows development, download the LanguageTool standalone server from the [official download page](https://languagetool.org/download/) and extract it into the ignored `LanguageTool/` folder. Start it from PowerShell:
+```powershell
+Set-Location .\LanguageTool
+java -Xms256m -Xmx1g -cp languagetool-server.jar org.languagetool.server.HTTPServer --port 8010 --allow-origin 'http://localhost:5173'
+```
+
+Set `VITE_LANGUAGETOOL_API_URL=http://localhost:8010/v2/check` in `.env`, then restart Vite so it reads the setting. Update the allowed origin to match the exact app origin. For deployment, use a trusted HTTPS endpoint and allow only the deployed app origin.
 
 ---
 

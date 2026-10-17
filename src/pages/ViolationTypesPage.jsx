@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { dataService } from '../services/dataService';
 import { useNotification } from '../context/NotificationContext';
 import { Modal } from '../components/common/Modal';
+import { LanguageToolTextarea } from '../components/common/LanguageToolTextarea';
 import { lockBodyScroll, unlockBodyScroll } from '../utils/scrollLock';
 import CustomSelect from '../components/common/CustomSelect';
 import { ViewModeToggle } from '../components/common/ViewModeToggle';
@@ -1225,26 +1226,9 @@ export const ViolationTypesPage = () => {
               ‹
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-              <button
-                key={pageNum}
-                onClick={() => setCurrentPage(pageNum)}
-                aria-current={pageNum === currentPage ? 'page' : undefined}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  background: pageNum === currentPage ? '#0f172a' : '#ffffff',
-                  color: pageNum === currentPage ? '#ffffff' : '#334155',
-                  fontWeight: 700,
-                  fontSize: '12px',
-                  cursor: 'pointer'
-                }}
-              >
-                {pageNum}
-              </button>
-            ))}
+            <span aria-current="page" aria-label={`Page ${currentPage} of ${totalPages}`} style={{ minWidth: '58px', textAlign: 'center', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>
+              {currentPage} / {totalPages}
+            </span>
 
             <button
               disabled={currentPage >= totalPages}
@@ -1455,7 +1439,7 @@ export const ViolationTypesPage = () => {
                   <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary, #334155)', display: 'block', marginBottom: '6px' }}>
                     Policy Description & Scope <span style={{ color: '#ef4444' }}>*</span>
                   </label>
-                  <textarea
+                  <LanguageToolTextarea
                     required
                     rows={3}
                     placeholder="Describe specific prohibited conduct, policy clause, and circumstances..."

@@ -31,25 +31,12 @@ import {
   Move,
   ChevronLeft,
   SlidersHorizontal,
-  Edit3
+  Edit3,
+  Upload
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-
-const SANCTION_PRESETS = [
-  'Verbal Warning & Reprimand',
-  'Written Acknowledgment & Reflection',
-  'Parent / Guardian Conference',
-  '1-Hour Campus Service',
-  'Guidance Counseling Session',
-  'Behavior Undertaking Contract'
-];
-
-const NOTE_SNIPPETS = [
-  'Student acknowledged the infraction and committed to standard compliance.',
-  'Parent/guardian was formally notified and attended conference.',
-  'Student has completed assigned campus remediation duties in full.',
-  'First offense counseling conducted; case considered closed.'
-];
+import { LanguageToolTextarea } from '../common/LanguageToolTextarea';
+import { readSignatureImage, signatureImageFormat } from '../../utils/signatureImage';
 
 const STATUS_CONFIG = {
   'Resolved': {
@@ -89,7 +76,7 @@ const STATUS_CONFIG = {
 /**
  * Builds the complete, authentic Philippine Institutional Clearance Certificate HTML for direct printing
  */
-export const buildCertificateHtml = ({ record, status, sanction, resolutionNotes, officerName, officerTitle }) => {
+export const buildCertificateHtml = ({ record, status, sanction, resolutionNotes, officerName, officerTitle, officerSignature, adviserName, adviserTitle, adviserSignature, parentName, parentTitle, parentSignature, includeOfficer = true, includeAdviser = true, includeParent = true }) => {
   const studentFullName = `${record?.student?.fname || ''} ${record?.student?.mname ? record.student.mname + ' ' : ''}${record?.student?.lname || ''}`.trim().toUpperCase() || 'STUDENT RECORD';
   const resolutionDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   const incidentDate = record?.date_reported 
@@ -290,12 +277,14 @@ export const buildCertificateHtml = ({ record, status, sanction, resolutionNotes
       vertical-align: bottom;
     }
     .sig-line {
+      position: relative;
       border-top: 1.5px solid #0f172a;
       padding-top: 4px;
       font-weight: bold;
       font-size: 9.5pt;
       color: #0f172a;
     }
+    .sig-image { position:absolute; width:auto; max-width:120px; height:22px; object-fit:contain; left:50%; bottom:100%; transform:translateX(-50%); }
     .sig-title {
       font-size: 8.5pt;
       color: #475569;
@@ -398,18 +387,18 @@ export const buildCertificateHtml = ({ record, status, sanction, resolutionNotes
       <div class="sig-seal-container">
         <table class="sig-table">
           <tr>
-            <td class="sig-cell">
-              <div class="sig-line">${officerName || 'Sheryl B. Gamboa, LPT'}</div>
+            ${includeOfficer ? `<td class="sig-cell">
+              <div class="sig-line">${officerSignature ? `<img class="sig-image" src="${officerSignature}" alt="${officerName} signature" />` : ''}${officerName || 'Sheryl B. Gamboa, LPT'}</div>
               <div class="sig-title">${officerTitle || 'Prefect of Discipline'}</div>
-            </td>
-            <td class="sig-cell">
-              <div class="sig-line">Class Adviser / Counselor</div>
-              <div class="sig-title">Guidance &amp; Counseling Office</div>
-            </td>
-            <td class="sig-cell">
-              <div class="sig-line">Parent / Legal Guardian</div>
-              <div class="sig-title">Conforme &amp; Acknowledged</div>
-            </td>
+            </td>` : ''}
+            ${includeAdviser ? `<td class="sig-cell">
+              <div class="sig-line">${adviserSignature ? `<img class="sig-image" src="${adviserSignature}" alt="${adviserName} signature" />` : ''}${adviserName || 'Class Adviser / Counselor'}</div>
+              <div class="sig-title">${adviserTitle || 'Guidance &amp; Counseling Office'}</div>
+            </td>` : ''}
+            ${includeParent ? `<td class="sig-cell">
+              <div class="sig-line">${parentSignature ? `<img class="sig-image" src="${parentSignature}" alt="${parentName} signature" />` : ''}${parentName || 'Parent / Legal Guardian'}</div>
+              <div class="sig-title">${parentTitle || 'Conforme &amp; Acknowledged'}</div>
+            </td>` : ''}
           </tr>
         </table>
       </div>
@@ -495,7 +484,28 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
   const [resolutionNotes, setResolutionNotes] = useState(record?.resolution_notes || '');
   const [officerName, setOfficerName] = useState(user?.name || user?.email?.split('@')[0] || 'Sheryl B. Gamboa, LPT');
   const [officerTitle, setOfficerTitle] = useState('Prefect of Discipline');
+  const [includeOfficer, setIncludeOfficer] = useState(true);
+  const [officerSignature, setOfficerSignature] = useState('');
+  const [includeAdviser, setIncludeAdviser] = useState(true);
+  const [adviserName, setAdviserName] = useState('Class Adviser / Counselor');
+  const [adviserTitle, setAdviserTitle] = useState('Guidance & Counseling Office');
+  const [adviserSignature, setAdviserSignature] = useState('');
+  const [includeParent, setIncludeParent] = useState(true);
+  const [parentName, setParentName] = useState('Parent / Legal Guardian');
+  const [parentTitle, setParentTitle] = useState('Conforme & Acknowledged');
+  const [parentSignature, setParentSignature] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleSignatureUpload = async (event, setSignature) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      setSignature(await readSignatureImage(file));
+    } catch (uploadError) {
+      error(uploadError.message);
+    }
+  };
 
   // Mobile Drawer Toggle
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -558,7 +568,7 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
       }, 150);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, record, status, sanction, resolutionNotes, officerName, officerTitle]);
+  }, [isOpen, record, status, sanction, resolutionNotes, officerName, officerTitle, officerSignature, includeOfficer, adviserName, adviserTitle, adviserSignature, includeAdviser, parentName, parentTitle, parentSignature, includeParent]);
 
   const isMobile = viewportWidth <= 768;
   const baseScale = isMobile ? Math.min(1, Math.max(0.38, (viewportWidth - 24) / 680)) : 1;
@@ -797,17 +807,6 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
     }
   };
 
-  const handleApplyPreset = (presetText) => {
-    setSanction(presetText);
-  };
-
-  const handleAppendSnippet = (snippetText) => {
-    setResolutionNotes((prev) => {
-      if (!prev || !prev.trim()) return snippetText;
-      return `${prev.trim()} ${snippetText}`;
-    });
-  };
-
   // High Quality Client-Side PDF Generation
   const generateResolutionPdfDoc = async () => {
     const [doc, logoBase64, sealBase64] = await Promise.all([
@@ -932,27 +931,23 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
     doc.text(clearanceText, 14, currentY);
     currentY += 16;
 
-    // Signatures
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text(officerName, 14, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.text(officerTitle, 14, currentY + 4);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('Class Adviser / Counselor', 80, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.text('Guidance & Counseling Office', 80, currentY + 4);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('Parent / Legal Guardian', 148, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.text('Conforme & Acknowledged', 148, currentY + 4);
+    // Signature images and editable signatory details
+    const proofSignatories = [
+      { included: includeOfficer, name: officerName, title: officerTitle, signature: officerSignature, x: 14 },
+      { included: includeAdviser, name: adviserName, title: adviserTitle, signature: adviserSignature, x: 80 },
+      { included: includeParent, name: parentName, title: parentTitle, signature: parentSignature, x: 148 }
+    ].filter((signatory) => signatory.included);
+    proofSignatories.forEach(({ name, title, signature, x }) => {
+      if (signature) {
+        try { doc.addImage(signature, signatureImageFormat(signature), x, currentY - 13, 40, 9); } catch {}
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text(name, x, currentY);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.text(title, x, currentY + 4, { maxWidth: 54 });
+    });
 
     // Security Footer
     const tearOffY = Math.max(currentY + 24, 252);
@@ -993,7 +988,17 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
         sanction,
         resolutionNotes,
         officerName,
-        officerTitle
+        officerTitle,
+        officerSignature,
+        adviserName,
+        adviserTitle,
+        adviserSignature,
+        parentName,
+        parentTitle,
+        parentSignature,
+        includeOfficer,
+        includeAdviser,
+        includeParent
       });
 
       await printOrShareDocument({
@@ -1152,11 +1157,10 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
 
       {/* 2. Sanction / Remediation Completed */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11.5px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
             <Award size={12} color="currentColor" /> Fulfilled Sanction
           </label>
-          <span style={{ fontSize: '10px', color: 'var(--text-secondary, #64748b)' }}>Click presets</span>
         </div>
         <input
           type="text"
@@ -1176,30 +1180,6 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
             color: 'var(--text-primary, #0f172a)'
           }}
         />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-          {SANCTION_PRESETS.map((p, idx) => (
-            <button
-              key={idx}
-              type="button"
-              className={`res-preset-button${sanction === p ? ' is-selected' : ''}`}
-              onClick={() => handleApplyPreset(p)}
-              style={{
-                background: sanction === p ? 'var(--brand-blue, #0f172a)' : 'var(--bg-surface, #ffffff)',
-                color: sanction === p ? '#ffffff' : 'var(--text-secondary, #475569)',
-                border: '1px solid',
-                borderColor: sanction === p ? 'var(--brand-blue, #0f172a)' : 'var(--border-medium, #cbd5e1)',
-                borderRadius: '5px',
-                padding: '3px 7px',
-                fontSize: '10px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.12s ease'
-              }}
-            >
-              + {p}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* 3. Resolution Notes / Outcomes */}
@@ -1210,10 +1190,10 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
           </label>
           <span style={{ fontSize: '10px', color: 'var(--text-secondary, #64748b)' }}>Official Record</span>
         </div>
-        <textarea
+        <LanguageToolTextarea
           rows={3}
           value={resolutionNotes}
-          onChange={(e) => setResolutionNotes(e.target.value)}
+          onChange={setResolutionNotes}
           placeholder="Document student reflection, counseling outcomes, or guardian agreements..."
           style={{
             width: '100%',
@@ -1231,70 +1211,34 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
             color: 'var(--text-primary, #0f172a)'
           }}
         />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-          {NOTE_SNIPPETS.map((snip, idx) => (
-            <button
-              key={idx}
-              type="button"
-              className="res-note-snippet"
-              onClick={() => handleAppendSnippet(snip)}
-              style={{
-                background: 'var(--bg-surface, #ffffff)',
-                color: 'var(--text-secondary, #475569)',
-                border: '1px dashed var(--border-medium, #cbd5e1)',
-                borderRadius: '5px',
-                padding: '3px 6px',
-                fontSize: '10px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.12s ease',
-                textAlign: 'left'
-              }}
-            >
-              + {snip.length > 32 ? snip.substring(0, 32) + '...' : snip}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* 4. Presiding Officer Signatory */}
-      <div className="res-officer-card" style={{ background: 'var(--bg-surface, #ffffff)', border: '1px solid var(--border-medium, #e2e8f0)', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>
-          Presiding Officer Signatory
-        </span>
-        <input
-          type="text"
-          value={officerName}
-          placeholder="Officer Name (e.g. Sheryl B. Gamboa, LPT)"
-          onChange={(e) => setOfficerName(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '6px 9px',
-            borderRadius: '6px',
-            border: '1px solid var(--border-medium, #cbd5e1)',
-            fontSize: '12px',
-            fontWeight: 600,
-            background: 'var(--bg-surface, #ffffff)',
-            color: 'var(--text-primary, #0f172a)',
-            boxSizing: 'border-box'
-          }}
-        />
-        <input
-          type="text"
-          value={officerTitle}
-          placeholder="Designation (e.g. Prefect of Discipline)"
-          onChange={(e) => setOfficerTitle(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '5px 9px',
-            borderRadius: '6px',
-            border: '1px solid var(--border-medium, #cbd5e1)',
-            fontSize: '11.5px',
-            background: 'var(--bg-surface, #ffffff)',
-            color: 'var(--text-primary, #0f172a)',
-            boxSizing: 'border-box'
-          }}
-        />
+      {/* 4. Document Signatories */}
+      <div className="res-signatory-section" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>Document Signatories</span>
+        {[
+          { key: 'officer', label: 'Include presiding officer', included: includeOfficer, setIncluded: setIncludeOfficer, name: officerName, setName: setOfficerName, title: officerTitle, setTitle: setOfficerTitle, signature: officerSignature, setSignature: setOfficerSignature, defaultName: 'System Administrator', defaultTitle: 'Prefect of Discipline' },
+          { key: 'adviser', label: 'Include class adviser / counselor', included: includeAdviser, setIncluded: setIncludeAdviser, name: adviserName, setName: setAdviserName, title: adviserTitle, setTitle: setAdviserTitle, signature: adviserSignature, setSignature: setAdviserSignature, defaultName: 'Class Adviser / Counselor', defaultTitle: 'Guidance & Counseling Office' },
+          { key: 'parent', label: 'Include parent / legal guardian', included: includeParent, setIncluded: setIncludeParent, name: parentName, setName: setParentName, title: parentTitle, setTitle: setParentTitle, signature: parentSignature, setSignature: setParentSignature, defaultName: 'Parent / Legal Guardian', defaultTitle: 'Conforme & Acknowledged' }
+        ].map((signatory) => (
+          <div key={signatory.key} className="res-signatory-card" style={{ background: 'var(--bg-surface, #ffffff)', border: `1px solid var(--border-medium, #e2e8f0)`, borderRadius: '8px', padding: '9px', display: 'flex', flexDirection: 'column', gap: '6px', opacity: signatory.included ? 1 : 0.72 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 700, color: 'var(--text-primary, #0f172a)', cursor: 'pointer' }}>
+              <input type="checkbox" checked={signatory.included} onChange={(event) => signatory.setIncluded(event.target.checked)} />
+              {signatory.label}
+            </label>
+            {signatory.included && <>
+              <input type="text" value={signatory.name} placeholder={signatory.defaultName} onChange={(event) => signatory.setName(event.target.value)} style={{ width: '100%', padding: '6px 9px', borderRadius: '6px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '12px', fontWeight: 600, background: 'var(--bg-surface, #ffffff)', color: 'var(--text-primary, #0f172a)', boxSizing: 'border-box' }} />
+              <input type="text" value={signatory.title} placeholder={signatory.defaultTitle} onChange={(event) => signatory.setTitle(event.target.value)} style={{ width: '100%', padding: '5px 9px', borderRadius: '6px', border: '1px solid var(--border-medium, #cbd5e1)', fontSize: '11.5px', background: 'var(--bg-surface, #ffffff)', color: 'var(--text-primary, #0f172a)', boxSizing: 'border-box' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 8px', border: '1px solid var(--border-medium, #cbd5e1)', borderRadius: '6px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary, #475569)' }}>
+                  <Upload size={12} /> {signatory.signature ? 'Replace digital signature' : 'Insert digital signature'}
+                  <input type="file" accept="image/png,image/jpeg" onChange={(event) => handleSignatureUpload(event, signatory.setSignature)} style={{ display: 'none' }} />
+                </label>
+                {signatory.signature && <button type="button" onClick={() => signatory.setSignature('')} style={{ border: 0, background: 'none', color: '#b91c1c', fontSize: '10px', cursor: 'pointer' }}>Remove signature</button>}
+              </div>
+            </>}
+          </div>
+        ))}
       </div>
 
       {/* Save Button (prominent in mobile drawer) */}
@@ -1392,6 +1336,10 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
           transform: translate3d(0, 0, 0);
           contain: layout paint;
           user-select: none;
+          cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v16l4-4 3 6 3-1-3-6h6z' fill='%230f172a' stroke='%23fff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, grab !important;
+        }
+        .res-preview-paper.is-dragging {
+          cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v16l4-4 3 6 3-1-3-6h6z' fill='%230f172a' stroke='%23fff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, grabbing !important;
         }
         .res-letterhead {
           display: flex;
@@ -1922,10 +1870,7 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
               >
                 {/* Live Paper Document Preview Sheet */}
                 <div
-                  className="res-preview-paper"
-                  style={{
-                    cursor: isDragging ? 'grabbing' : 'grab'
-                  }}
+                  className={`res-preview-paper${isDragging ? ' is-dragging' : ''}`}
                   onMouseDown={handleMouseDown}
                   onTouchStart={handleTouchStart}
                 >
@@ -2052,29 +1997,21 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
 
                   {/* Signatories */}
                   <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', textAlign: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <div style={{ flex: 1, minWidth: '130px', maxWidth: '180px' }}>
-                      <div style={{ height: '24px' }} />
-                      <div style={{ borderTop: '1.5px solid #0f172a', paddingTop: '4px' }}>
-                        <strong style={{ fontSize: '11.5px', display: 'block', color: '#0f172a' }}>{officerName}</strong>
-                        <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>{officerTitle}</span>
+                    {[
+                      { included: includeOfficer, name: officerName, title: officerTitle, signature: officerSignature },
+                      { included: includeAdviser, name: adviserName, title: adviserTitle, signature: adviserSignature },
+                      { included: includeParent, name: parentName, title: parentTitle, signature: parentSignature }
+                    ].filter((signatory) => signatory.included).map((signatory, index) => (
+                      <div key={index} style={{ flex: 1, minWidth: '130px', maxWidth: '180px' }}>
+                        <div style={{ height: '24px', display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
+                          {signatory.signature && <img src={signatory.signature} alt={`${signatory.name} signature`} style={{ maxWidth: '130px', maxHeight: '23px', objectFit: 'contain' }} />}
+                        </div>
+                        <div style={{ borderTop: '1.5px solid #0f172a', paddingTop: '4px' }}>
+                          <strong style={{ fontSize: '11.5px', display: 'block', color: '#0f172a' }}>{signatory.name}</strong>
+                          <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>{signatory.title}</span>
+                        </div>
                       </div>
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: '130px', maxWidth: '180px' }}>
-                      <div style={{ height: '24px' }} />
-                      <div style={{ borderTop: '1.5px solid #0f172a', paddingTop: '4px' }}>
-                        <strong style={{ fontSize: '11.5px', display: 'block', color: '#0f172a' }}>Class Adviser / Counselor</strong>
-                        <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>Guidance &amp; Counseling Office</span>
-                      </div>
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: '130px', maxWidth: '180px' }}>
-                      <div style={{ height: '24px' }} />
-                      <div style={{ borderTop: '1.5px solid #0f172a', paddingTop: '4px' }}>
-                        <strong style={{ fontSize: '11.5px', display: 'block', color: '#0f172a' }}>Parent / Legal Guardian</strong>
-                        <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>Conforme &amp; Acknowledged</span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
 
                   {/* Security Footnote */}
@@ -2222,3 +2159,4 @@ export const ResolutionModal = ({ isOpen, onClose, record, onUpdated }) => {
     </div>
   );
 };
+

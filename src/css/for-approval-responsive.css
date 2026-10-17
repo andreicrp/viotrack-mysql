@@ -121,3 +121,36 @@
   border-color: #81343a !important;
   color: #fca5a5 !important;
 }
+.for-approval-page .responsive-cards-mobile.grid-view .approval-mobile-record-card {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08) !important;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.for-approval-page .responsive-cards-mobile.grid-view .approval-mobile-record-card:hover {
+  border-color: #94a3b8 !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+.for-approval-page .responsive-cards-mobile.grid-view .approval-mobile-record-card.is-selected {
+  border: 1.5px solid #2563eb !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+}
+
+[data-theme="dark"] .for-approval-page .responsive-cards-mobile.grid-view .approval-mobile-record-card {
+  border-color: #383838 !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .for-approval-page .responsive-cards-mobile.grid-view .approval-mobile-record-card:hover {
+  border-color: #5a5a5a !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] .for-approval-page .responsive-cards-mobile.grid-view .approval-mobile-record-card.is-selected {
+  background: #242424 !important;
+  border-color: #737373 !important;
+  box-shadow: 0 0 0 2px rgba(163, 163, 163, 0.16) !important;
+}

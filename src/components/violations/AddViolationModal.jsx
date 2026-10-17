@@ -4,6 +4,7 @@ import { dataService } from '../../services/dataService';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { LanguageToolTextarea } from '../common/LanguageToolTextarea';
 import { claimSubmissionLock, releaseSubmissionLock } from '../../utils/dataIntegrity';
 import { lockBodyScroll, unlockBodyScroll } from '../../utils/scrollLock';
 import {
@@ -382,14 +383,9 @@ export const AddViolationModal = ({
         });
         setPendingRecords(createdRecords);
         setIsApprovalPopupOpen(true);
+        success('Submitted for Approval — awaiting admin review.');
       } else {
-        if (chosenStudents.length === 1 && chosenViolations.length === 1) {
-          success(`Incident report for ${chosenStudents[0]?.fname || 'student'} added successfully!`);
-        } else {
-          success(
-            `Successfully recorded ${chosenViolations.length} offense(s) for ${chosenStudents.length} student(s) (${createdRecords.length} records)!`
-          );
-        }
+        success('Logged Successfully');
 
         onRecordAdded?.(createdRecords[0] || createdRecords);
         onClose();
@@ -833,8 +829,9 @@ export const AddViolationModal = ({
                         Incident Details &amp; Faculty Remarks
                         <span className="lvm-form-label-opt">(Optional)</span>
                       </label>
-                      <textarea
+                      <LanguageToolTextarea
                         className="lvm-text-area"
+                        rows={3}
                         placeholder="Specify location, witnesses, circumstances, or confiscated items..."
                         value={formData.remarks}
                         onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
@@ -1009,8 +1006,9 @@ export const AddViolationModal = ({
                           </label>
                           <div className="lvm-sms-custom-block">
                             <MessageSquare className="lvm-sms-custom-icon" size={15} />
-                            <textarea
+                            <LanguageToolTextarea
                               className="lvm-sms-memo"
+                              rows={3}
                               placeholder="Add a custom message..."
                               maxLength={160}
                               disabled={isTeacher}

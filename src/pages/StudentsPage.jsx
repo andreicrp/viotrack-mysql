@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useDeferredValue, useCallback } from 'react';
 import { dataService } from '../services/dataService';
 import { AddStudentModal } from '../components/students/AddStudentModal';
-import { StudentIdModal } from '../components/students/StudentIdModal';
+import { StudentQrModal } from '../components/students/StudentQrModal';
 import { BulkImportModal } from '../components/students/BulkImportModal';
 import { ViewStudentModal } from '../components/students/ViewStudentModal';
 import { CustomSelect } from '../components/common/CustomSelect';
+import { CompactPagination } from '../components/common/CompactPagination';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -20,7 +21,7 @@ import {
   Trash2,
   Edit3,
   Eye,
-  IdCard,
+  QrCode,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -30,8 +31,6 @@ import {
   BookOpen,
   Filter,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   ShieldAlert,
   Sparkles
 } from 'lucide-react';
@@ -114,7 +113,7 @@ export const StudentsPage = () => {
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [studentToEdit, setStudentToEdit] = useState(null);
-  const [studentForIdCard, setStudentForIdCard] = useState(null);
+  const [studentForQr, setStudentForQr] = useState(null);
   const [studentForViewModal, setStudentForViewModal] = useState(null);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [bulkImportFormat, setBulkImportFormat] = useState('all'); // 'all' | 'pdf' | 'csv'
@@ -797,7 +796,7 @@ export const StudentsPage = () => {
           {/* Quick Active Filters Feedback */}
           {(searchTerm || levelFilter !== 'all' || gradeFilter !== 'all' || strandFilter !== 'all' || yearFilter !== 'all') && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '12px', color: '#64748b' }}>Active Filters:</span>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>Active Filters:</span>
               {yearFilter !== 'all' && (
                 <span style={{ background: '#f0fdf4', color: '#15803d', fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   S.Y.: {yearFilter}
@@ -853,7 +852,7 @@ export const StudentsPage = () => {
         </div>
 
         {/* Student Table (Desktop View) */}
-        <div className={`responsive-table-desktop student-directory-table ${viewMode === 'grid' || (!loading && paginatedStudents.length === 0) ? 'force-hidden' : ''}`}>
+        <div className="responsive-table-desktop student-directory-table force-hidden">
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
@@ -1146,10 +1145,10 @@ export const StudentsPage = () => {
                             <Eye size={14} color="var(--brand-blue, #07345f)" strokeWidth={2.2} /> View
                           </button>
 
-                          {/* ID Card */}
+                          {/* Student QR */}
                           <button
                             type="button"
-                            onClick={() => setStudentForIdCard(s)}
+                            onClick={() => setStudentForQr(s)}
                             className="student-row-action-btn"
                             style={{
                               background: 'var(--bg-surface-elevated, #ffffff)',
@@ -1166,9 +1165,9 @@ export const StudentsPage = () => {
                               transition: 'all 0.15s',
                               boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
                             }}
-                            title="Generate Official Student ID"
+                            title="Show Student QR Code"
                           >
-                            <IdCard size={14} color="var(--text-muted, #475569)" strokeWidth={2.2} /> ID Card
+                            <QrCode size={14} color="var(--text-muted, #475569)" strokeWidth={2.2} /> QR
                           </button>
 
                           {/* Edit */}
@@ -1323,11 +1322,11 @@ export const StudentsPage = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setStudentForIdCard(s)}
+                      onClick={() => setStudentForQr(s)}
                       className="entity-grid-btn"
-                      title="Generate ID Card"
+                      title="Show Student QR Code"
                     >
-                      <IdCard size={12} strokeWidth={2.4} /> ID
+                      <QrCode size={12} strokeWidth={2.4} /> QR
                     </button>
                     {isAdmin && (
                       <button
@@ -1352,6 +1351,7 @@ export const StudentsPage = () => {
               const isChecked = selectedIds.includes(s.id);
               const strand = getStudentStrand(s);
               const isSHS = getGradeNumber(s.grade) >= 11;
+              const gradeLabel = String(s.grade || '').toLowerCase().startsWith('grade') ? s.grade : `Grade ${s.grade || 'N/A'}`;
 
               return (
                 <div
@@ -1361,10 +1361,10 @@ export const StudentsPage = () => {
                     background: isChecked ? '#f0f4f8' : '#ffffff',
                     border: isChecked ? '1.5px solid #07345f' : '1px solid #e2e8f0',
                     borderRadius: '14px',
-                    padding: '14px 16px',
+                    padding: '16px 18px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '10px',
+                    gap: '12px',
                     boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
                   }}
                 >
@@ -1377,21 +1377,13 @@ export const StudentsPage = () => {
                         onChange={() => toggleSelect(s.id)}
                         style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#07345f', flexShrink: 0 }}
                       />
-                      <StudentInitialsAvatar
-                        student={s}
-                        style={{
-                          width: 38,
-                          height: 38,
-                          border: '1px solid #e2e8f0',
-                          fontSize: '12px'
-                        }}
-                      />
+                      <StudentInitialsAvatar student={s} className="student-directory-list-avatar" />
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div className="student-mobile-list-name" style={{ fontWeight: 700, fontSize: '13.5px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div className="student-mobile-list-name" style={{ fontWeight: 800, fontSize: '15px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {s.fname} {s.mname ? s.mname[0] + '. ' : ''}{s.lname}
                         </div>
-                        <div className="student-mobile-list-id" style={{ fontSize: '11px', color: '#64748b' }}>
-                          Student ID: <strong style={{ color: '#334155' }}>{s.student_id}</strong> • {s.gender || 'Male'}
+                        <div className="student-mobile-list-id" style={{ fontSize: '12px', color: '#64748b' }}>
+                          Student ID: <strong style={{ color: '#334155' }}>{s.student_id}</strong> <span aria-hidden="true">•</span> {s.gender || 'Male'}
                         </div>
                       </div>
                     </div>
@@ -1403,32 +1395,40 @@ export const StudentsPage = () => {
                           color: isSHS ? '#7c3aed' : '#2563eb',
                           border: `1px solid ${isSHS ? '#ddd6fe' : '#bfdbfe'}`,
                           padding: '2px 8px',
-                          borderRadius: '10px',
-                          fontSize: '11px',
+                          borderRadius: '999px',
+                          fontSize: '12px',
                           fontWeight: 700
                         }}
                       >
-                        {s.grade}
+                        {gradeLabel}
                       </span>
                     </div>
                   </div>
 
                   {/* Academic details box */}
-                  <div className="student-mobile-list-details" style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #f1f5f9', fontSize: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <span style={{ color: '#64748b' }}>Section & SY:</span>
-                      <strong style={{ color: '#1e293b' }}>{s.section} ({s.academicyear || '2025-2026'})</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <span style={{ color: '#64748b' }}>Strand:</span>
-                      <strong className="student-mobile-list-strand" style={{ color: isSHS ? '#047857' : '#475569' }}>{strand}</strong>
-                    </div>
-                    {s.parent_name && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', paddingTop: '4px', borderTop: '1px dashed #e2e8f0' }}>
-                        <span style={{ color: '#64748b' }}>Guardian:</span>
-                        <span style={{ color: '#334155', fontWeight: 600 }}>{s.parent_name} {s.parent_contact ? `(${s.parent_contact})` : ''}</span>
+                  <div className="student-mobile-list-details student-directory-list-details">
+                    <div className="student-directory-list-detail">
+                      <GraduationCap size={18} aria-hidden="true" />
+                      <div>
+                        <span className="student-directory-list-label">Section &amp; SY</span>
+                        <strong>{s.section || 'Section not set'} ({s.academicyear || '2025-2026'})</strong>
                       </div>
-                    )}
+                    </div>
+                    <div className="student-directory-list-detail">
+                      <Layers size={18} aria-hidden="true" />
+                      <div>
+                        <span className="student-directory-list-label">Strand</span>
+                        <strong className="student-mobile-list-strand">{strand}</strong>
+                      </div>
+                    </div>
+                    <div className="student-directory-list-detail">
+                      <Users size={18} aria-hidden="true" />
+                      <div>
+                        <span className="student-directory-list-label">Guardian</span>
+                        <strong>{s.parent_name || 'Guardian not listed'}</strong>
+                        {s.parent_contact && <span className="student-directory-list-contact">{s.parent_contact}</span>}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Footer Action Buttons */}
@@ -1456,7 +1456,7 @@ export const StudentsPage = () => {
 
                     <button
                       type="button"
-                      onClick={() => setStudentForIdCard(s)}
+                      onClick={() => setStudentForQr(s)}
                       style={{
                         background: '#ffffff',
                         border: '1px solid #cbd5e1',
@@ -1472,7 +1472,7 @@ export const StudentsPage = () => {
                         boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
                       }}
                     >
-                      <IdCard size={14} color="#475569" strokeWidth={2.2} /> ID Card
+                      <QrCode size={14} color="#475569" strokeWidth={2.2} /> QR
                     </button>
 
                     {isAdmin && (
@@ -1558,75 +1558,7 @@ export const StudentsPage = () => {
             of <strong style={{ color: '#0f172a' }}>{filteredAndSortedStudents.length}</strong> students
           </div>
 
-          <div className="pagination-btn-group" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              style={{
-                padding: '6px 12px',
-                border: '1px solid var(--border-subtle, #cbd5e1)',
-                borderRadius: '6px',
-                background: 'var(--bg-surface-elevated, #ffffff)',
-                color: currentPage === 1 ? 'var(--text-muted, #94a3b8)' : 'var(--text-secondary, #334155)',
-                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                fontSize: '12px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <ChevronLeft size={14} /> Prev
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-              .map((p, idx, arr) => {
-                const prev = arr[idx - 1];
-                const showEllipsis = prev && p - prev > 1;
-                return (
-                  <React.Fragment key={p}>
-                    {showEllipsis && <span style={{ padding: '0 4px', color: 'var(--text-muted, #94a3b8)' }}>...</span>}
-                    <button
-                      onClick={() => setCurrentPage(p)}
-                      aria-current={p === currentPage ? 'page' : undefined}
-                      style={{
-                        padding: '6px 12px',
-                        border: p === currentPage ? 'none' : '1px solid var(--border-subtle, #cbd5e1)',
-                        borderRadius: '6px',
-                        background: p === currentPage ? 'var(--brand-blue, #0f172a)' : 'var(--bg-surface-elevated, #ffffff)',
-                        color: p === currentPage ? '#ffffff' : 'var(--text-secondary, #334155)',
-                        fontWeight: p === currentPage ? 700 : 500,
-                        fontSize: '12px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {p}
-                    </button>
-                  </React.Fragment>
-                );
-              })}
-
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              style={{
-                padding: '6px 12px',
-                border: '1px solid var(--border-subtle, #cbd5e1)',
-                borderRadius: '6px',
-                background: 'var(--bg-surface-elevated, #ffffff)',
-                color: currentPage === totalPages ? 'var(--text-muted, #94a3b8)' : 'var(--text-secondary, #334155)',
-                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                fontSize: '12px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              Next <ChevronRight size={14} />
-            </button>
-          </div>
+          <CompactPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} ariaLabel="Students pagination" />
         </div>
       </div>
 
@@ -1671,12 +1603,12 @@ export const StudentsPage = () => {
         }}
       />
 
-      {/* ID Badge Modal with QR code */}
-      {studentForIdCard && (
-        <StudentIdModal
-          isOpen={!!studentForIdCard}
-          onClose={() => setStudentForIdCard(null)}
-          student={studentForIdCard}
+      {/* Student QR Code Modal */}
+      {studentForQr && (
+        <StudentQrModal
+          isOpen={!!studentForQr}
+          onClose={() => setStudentForQr(null)}
+          student={studentForQr}
         />
       )}
 

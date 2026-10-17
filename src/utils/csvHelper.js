@@ -75,17 +75,19 @@ export const parseCsvString = (text) => {
   if (!text || !text.trim()) return [];
 
   const normalizedText = text.replace(/^\uFEFF/, '');
-  const firstLine = normalizedText.split(/\r?\n/, 1)[0] || '';
   let commas = 0;
   let tabs = 0;
   let insideQuotes = false;
-  for (let i = 0; i < firstLine.length; i++) {
-    if (firstLine[i] === '"') {
-      if (insideQuotes && firstLine[i + 1] === '"') i++;
+  for (let i = 0; i < normalizedText.length; i++) {
+    const char = normalizedText[i];
+    if (char === '"') {
+      if (insideQuotes && normalizedText[i + 1] === '"') i++;
       else insideQuotes = !insideQuotes;
-    } else if (!insideQuotes && firstLine[i] === ',') {
+    } else if (!insideQuotes && (char === '\r' || char === '\n')) {
+      break;
+    } else if (!insideQuotes && char === ',') {
       commas++;
-    } else if (!insideQuotes && firstLine[i] === '\t') {
+    } else if (!insideQuotes && char === '\t') {
       tabs++;
     }
   }

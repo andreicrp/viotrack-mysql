@@ -6,6 +6,7 @@ import { StatusModal } from '../components/violations/StatusModal';
 import { ResolutionModal } from '../components/violations/ResolutionModal';
 import { ParentSummonsModal } from '../components/violations/ParentSummonsModal';
 import { CustomSelect } from '../components/common/CustomSelect';
+import { LanguageToolTextarea } from '../components/common/LanguageToolTextarea';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -161,10 +162,15 @@ export const StudentViolationDetailPage = () => {
   const handleStatusUpdated = async (recordId, newStatus) => {
     try {
       await dataService.updateRecordStatus(recordId, { status: newStatus });
-      setRecords(records.map(r => r.id === recordId ? { ...r, status: newStatus } : r));
+      const updateStatus = (record) => String(record.id) === String(recordId)
+        ? { ...record, status: newStatus }
+        : record;
+      setRecords(previous => previous.map(updateStatus));
+      setAllStudentRecords(previous => previous.map(updateStatus));
       success(`Status updated successfully to "${newStatus}"!`);
     } catch (err) {
       error('Failed to update status: ' + err.message);
+      throw err;
     }
   };
 
@@ -512,6 +518,44 @@ export const StudentViolationDetailPage = () => {
   // Status Badge UI
   const renderStatusBadge = (st) => {
     const s = (st || '').toLowerCase();
+    const conferenceStatuses = {
+      '1st conference': {
+        className: 'record-status-pill--conference-first',
+        label: '1st Conference',
+        Icon: Users,
+        background: '#e0f2fe',
+        color: '#075985',
+        border: '#7dd3fc',
+        iconColor: '#0284c7'
+      },
+      '2nd conference': {
+        className: 'record-status-pill--conference-second',
+        label: '2nd Conference',
+        Icon: FileText,
+        background: '#fef3c7',
+        color: '#92400e',
+        border: '#fcd34d',
+        iconColor: '#d97706'
+      },
+      '3rd conference': {
+        className: 'record-status-pill--conference-third',
+        label: '3rd Conference',
+        Icon: ShieldAlert,
+        background: '#fee2e2',
+        color: '#991b1b',
+        border: '#fecaca',
+        iconColor: '#dc2626'
+      }
+    };
+    const conferenceStatus = conferenceStatuses[s];
+    if (conferenceStatus) {
+      const { className, label, Icon, background, color, border, iconColor } = conferenceStatus;
+      return (
+        <span className={`record-status-pill ${className}`} style={{ background, color, border: `1px solid ${border}`, padding: '3.5px 10px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+          <Icon size={12} color={iconColor} strokeWidth={2.4} /> {label}
+        </span>
+      );
+    }
     if (s === 'resolved') {
       return (
         <span className="badge-minor record-status-pill record-status-pill--resolved" style={{ background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', padding: '3.5px 10px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
@@ -554,6 +598,45 @@ export const StudentViolationDetailPage = () => {
         <CheckCircle2 size={12} color="#059669" strokeWidth={2.2} /> Minor
       </span>
     );
+  };
+
+  const renderCardSeverityBadge = (ty) => {
+    const t = (ty || '').toLowerCase();
+    if (t === 'major') {
+      return (
+        <span className="violation-severity-pill severity-major" style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #ffe4e6', padding: '4px 14px', borderRadius: '9999px', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.01em' }}>
+          Major
+        </span>
+      );
+    }
+    if (t === 'serious') {
+      return (
+        <span className="violation-severity-pill severity-serious" style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fef3c7', padding: '4px 14px', borderRadius: '9999px', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.01em' }}>
+          Serious
+        </span>
+      );
+    }
+    return (
+      <span className="violation-severity-pill severity-minor" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #dcfce7', padding: '4px 14px', borderRadius: '9999px', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.01em' }}>
+        Minor
+      </span>
+    );
+  };
+
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${datePart} at ${timePart}`;
+  };
+
+  const getConferenceTitle = (status) => {
+    const s = (status || '').toLowerCase();
+    if (s.includes('3rd conference')) return '3rd Conference';
+    if (s.includes('2nd conference')) return '2nd Conference';
+    return '1st Conference';
   };
 
   if (loading) {
@@ -1270,7 +1353,7 @@ export const StudentViolationDetailPage = () => {
         </div>
 
         {/* Violation Table (Desktop View) */}
-        <div className="responsive-table-desktop tablet-list-table" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflowX: 'auto', overflowY: 'hidden' }}>
+        <div className="responsive-table-desktop tablet-list-table force-hidden" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflowX: 'auto', overflowY: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -1511,7 +1594,7 @@ export const StudentViolationDetailPage = () => {
         </div>
 
         {/* Violation Cards (Mobile View) */}
-        <div className="responsive-cards-mobile tablet-list-cards">
+        <div className="responsive-cards-mobile tablet-list-cards student-violation-record-cards">
           {paginated.length === 0 ? (
             <div style={{ padding: '30px 16px', textAlign: 'center' }}>
               <CheckCircle2 size={24} color="#10b981" />
@@ -1520,61 +1603,116 @@ export const StudentViolationDetailPage = () => {
           ) : (
             paginated.map((r) => {
               const isSelected = selectedIds.includes(r.id);
+              const isResolved = (r.status || '').toLowerCase() === 'resolved';
               return (
                 <div
                   key={r.id}
-                  className="student-violation-mobile-card"
+                  className={`student-violation-mobile-card${isSelected ? ' is-selected' : ''}`}
                   style={{
-                    background: isSelected ? 'var(--bg-surface-hover, #f8fafc)' : 'var(--bg-surface, #ffffff)',
-                    border: isSelected ? '1.5px solid var(--border-focus, #2563eb)' : '1px solid var(--border-subtle, #e2e8f0)',
-                    borderRadius: '14px',
-                    padding: '14px',
+                    background: isSelected ? '#f8faff' : '#ffffff',
+                    border: isSelected ? '1.5px solid #07345f' : '1px solid #e2e8f0',
+                    borderRadius: '16px',
+                    padding: '16px 18px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '10px',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                    gap: '14px',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.04)'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* Top Header: Checkbox + Offense Title + Severity Badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleToggleSelect(r.id)}
-                        style={{ cursor: 'pointer', accentColor: 'var(--brand-blue, #0f172a)', width: '16px', height: '16px' }}
+                        style={{ cursor: 'pointer', width: '20px', height: '20px', accentColor: '#07345f', flexShrink: 0, borderRadius: '5px' }}
                       />
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>
-                        {r.violation?.title || 'Infraction'}
-                      </span>
+                      <h3 style={{ margin: 0, minWidth: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', letterSpacing: '-0.02em', whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.25 }}>
+                        {r.violation?.title || 'Violation Incident'}
+                      </h3>
                     </div>
-                    {renderSeverityBadge(r.violation?.type)}
+                    <div style={{ flexShrink: 0 }}>
+                      {renderCardSeverityBadge(r.violation?.type)}
+                    </div>
                   </div>
 
-                  <div className="student-violation-mobile-details" style={{ background: 'var(--bg-surface-elevated, #f8fafc)', border: '1px solid var(--border-subtle, #e2e8f0)', padding: '10px 12px', borderRadius: '8px', fontSize: '12px' }}>
-                    <div style={{ color: 'var(--text-muted, #64748b)' }}>
-                      {new Date(r.date_reported).toLocaleDateString([], { month: 'short', day: '2-digit', year: 'numeric' })} at {new Date(r.date_reported).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {/* Incident Details Box */}
+                  <div className="violation-list-offense-panel" style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '14px', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <Calendar size={18} className="violation-detail-icon" style={{ color: '#64748b', marginTop: '2px', flexShrink: 0 }} />
+                      <div>
+                        <div className="violation-detail-label" style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>Date & Time</div>
+                        <div className="violation-detail-value" style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary, #0f172a)', marginTop: '2px' }}>
+                          {formatDateTime(r.date_reported)}
+                        </div>
+                      </div>
                     </div>
-                    {r.sanction ? (
-                      <div style={{ color: 'var(--text-secondary, #475569)', marginTop: '4px' }}>
-                        Sanction: <strong style={{ color: 'var(--text-primary, #0f172a)', fontWeight: 700 }}>{r.sanction}</strong>
-                      </div>
-                    ) : (
-                      <div style={{ color: 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>
-                        Sanction: <span style={{ fontStyle: 'italic', fontWeight: 500 }}>None recorded</span>
-                      </div>
-                    )}
-                  </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '6px', borderTop: '1px dashed var(--border-subtle, #e2e8f0)' }}>
-                    <button
-                      onClick={() => setRecordForStatusChange(r)}
-                      className="student-record-status-trigger"
-                      style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <ShieldAlert size={18} className="violation-detail-icon" style={{ color: '#64748b', marginTop: '2px', flexShrink: 0 }} />
+                      <div>
+                        <div className="violation-detail-label" style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>Sanction</div>
+                        <div className="violation-detail-value" style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary, #0f172a)', marginTop: '2px' }}>
+                          {r.sanction || 'Written Warning & Reprimand'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <User size={18} className="violation-detail-icon" style={{ color: '#64748b', marginTop: '2px', flexShrink: 0 }} />
+                      <div>
+                        <div className="violation-detail-label" style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>Recorded by</div>
+                        <div className="violation-detail-value" style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary, #0f172a)', marginTop: '2px' }}>
+                          {r.reported_by_name || r.admin_name || 'System Administrator'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Conference & Status Subcard */}
+                    <div
+                      className="violation-conference-subcard"
+                      style={{
+                        background: '#eff6ff',
+                        border: '1px solid #dbeafe',
+                        borderRadius: '12px',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        marginTop: '2px'
+                      }}
                     >
-                      {renderStatusBadge(r.status)}
-                    </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                        <Users size={20} color="#2563eb" style={{ flexShrink: 0 }} />
+                        <div style={{ minWidth: 0 }}>
+                          <div className="violation-conference-title" style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                            {getConferenceTitle(r.status)}
+                          </div>
+                          <div className="violation-conference-date" style={{ fontSize: '10.5px', color: '#64748b', whiteSpace: 'nowrap', marginTop: '1px' }}>
+                            {formatDateTime(r.date_reported)}
+                          </div>
+                        </div>
+                      </div>
 
-                    <div className="student-violation-mobile-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                        <div className="violation-conference-divider" style={{ width: '1px', height: '28px', background: '#bfdbfe' }} />
+                        <button
+                          onClick={() => setRecordForStatusChange(r)}
+                          className="student-record-status-trigger"
+                          style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+                          title="Click to update status"
+                        >
+                          {renderStatusBadge(r.status)}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Action Buttons */}
+                  <div style={{ display: 'flex', width: '100%', paddingTop: '2px' }}>
+                    <div className="violation-list-mobile-actions" style={{ display: 'flex', gap: '10px', width: '100%', alignItems: 'center' }}>
                       {isAdmin && (
                         <button
                           type="button"
@@ -1582,51 +1720,82 @@ export const StudentViolationDetailPage = () => {
                             setSummonsTargetRecord(r);
                             setIsSummonsModalOpen(true);
                           }}
-                          className="violation-summons-action"
+                          className="violation-list-action-btn violation-action-button violation-summons-action"
                           aria-pressed={isSummonsModalOpen && summonsTargetRecord?.id === r.id}
                           style={{
+                            flex: 1,
+                            height: '42px',
                             background: '#eff6ff',
-                            color: '#1d4ed8',
                             border: '1px solid #bfdbfe',
-                            padding: '6px 11px',
-                            borderRadius: '7px',
-                            fontSize: '11.5px',
+                            color: '#1d4ed8',
+                            borderRadius: '10px',
+                            fontSize: '13.5px',
                             fontWeight: 700,
                             cursor: 'pointer',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '5px',
+                            justifyContent: 'center',
+                            gap: '6px',
                             transition: 'all 0.15s ease'
                           }}
-                          title="Generate summons letter"
+                          title="Generate parent summons letter"
                         >
-                          <FileText size={12} /> Summons
+                          <FileText size={16} strokeWidth={2.2} /> Summons
                         </button>
                       )}
 
                       {isAdmin && (
                         <button
                           type="button"
-                          onClick={() => setSelectedRecordForResolution(r)}
-                          className="violation-proof-action"
-                          aria-pressed={selectedRecordForResolution?.id === r.id}
+                          onClick={() => setRecordForStatusChange(r)}
+                          className="violation-list-action-btn violation-action-button student-detail-status-action"
                           style={{
-                            background: '#ecfdf5',
-                            color: '#047857',
-                            border: '1px solid #a7f3d0',
-                            padding: '6px 11px',
-                            borderRadius: '7px',
-                            fontSize: '11.5px',
+                            flex: 1,
+                            height: '42px',
+                            background: '#f8fafc',
+                            border: '1px solid #cbd5e1',
+                            color: '#334155',
+                            borderRadius: '10px',
+                            fontSize: '13.5px',
                             fontWeight: 700,
                             cursor: 'pointer',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '5px',
+                            justifyContent: 'center',
+                            gap: '6px',
                             transition: 'all 0.15s ease'
                           }}
-                          title="Resolve or document case"
+                          title="Update status"
                         >
-                          <FileText size={12} /> Resolve
+                          <Flag size={16} strokeWidth={2.2} /> Status
+                        </button>
+                      )}
+
+                      {isAdmin && isResolved && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRecordForResolution(r)}
+                          className="violation-list-action-btn is-proof violation-action-button violation-proof-action"
+                          aria-pressed={selectedRecordForResolution?.id === r.id}
+                          style={{
+                            flex: 1,
+                            height: '42px',
+                            background: '#f0fdf4',
+                            border: '1px solid #bbf7d0',
+                            color: '#15803d',
+                            borderRadius: '10px',
+                            fontSize: '13.5px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            transition: 'all 0.15s ease'
+                          }}
+                          title="View resolution proof"
+                        >
+                          <FileText size={16} strokeWidth={2.2} /> Proof
                         </button>
                       )}
 
@@ -1634,15 +1803,14 @@ export const StudentViolationDetailPage = () => {
                         <button
                           type="button"
                           onClick={() => handleRemoveRecord(r.id)}
-                          className="student-violation-card-delete-btn mobile-delete-button"
+                          className="violation-list-action-btn is-delete violation-action-button violation-action-delete student-violation-card-delete-btn mobile-delete-button"
                           style={{
+                            flex: 1,
+                            height: '42px',
                             background: '#fef2f2',
-                            color: '#dc2626',
                             border: '1px solid #fecaca',
-                            padding: '6px 9px',
-                            borderRadius: '7px',
-                            fontSize: '11.5px',
-                            fontWeight: 700,
+                            color: '#dc2626',
+                            borderRadius: '10px',
                             cursor: 'pointer',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -1651,7 +1819,7 @@ export const StudentViolationDetailPage = () => {
                           }}
                           title="Delete record"
                         >
-                          <Trash2 size={13} color="#dc2626" strokeWidth={2} />
+                          <Trash2 size={18} strokeWidth={2.2} />
                           <span className="mobile-delete-label">Delete</span>
                         </button>
                       )}
@@ -1972,7 +2140,7 @@ export const StudentViolationDetailPage = () => {
                     </button>
                   )}
                 </div>
-                <textarea
+                <LanguageToolTextarea
                   className="sms-guardian-notice-textarea"
                   rows={4}
                   placeholder={`[VioTrack Notice] Dear ${student.parent_name || 'Guardian'}, please be informed that student ${student.fname} ${student.lname} has a recorded notice under category: ${smsReportType}. Please contact the Guidance Office.`}

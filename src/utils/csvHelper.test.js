@@ -28,6 +28,13 @@ describe('CSV & Security Utilities', () => {
     ]);
   });
 
+  it('detects delimiters after quoted multiline headers', () => {
+    expect(parseCsvString('"Student\nID"\tName\tEmail\r\n2026-001\tAda\tada@example.com')).toEqual([
+      ['Student\nID', 'Name', 'Email'],
+      ['2026-001', 'Ada', 'ada@example.com']
+    ]);
+  });
+
   it('escapes CSV formula injection patterns', () => {
     const maliciousFormula = '=SUM(1+1)';
     const sanitized = sanitizeCsvCell(maliciousFormula);

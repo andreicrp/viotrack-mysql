@@ -1152,6 +1152,34 @@ textarea {
   gap: 8px;
 }
 
+.custom-toast.has-action {
+  align-items: center;
+}
+
+.custom-toast.has-action .custom-toast-body {
+  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-toast.has-action .custom-toast-title {
+  display: none;
+}
+
+.custom-toast.has-action .custom-toast-message {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.custom-toast.has-action .custom-toast-action-row {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
 .custom-toast-action-btn {
   font-size: 11.5px;
   font-weight: 700;
@@ -1220,6 +1248,10 @@ textarea {
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
   }
 
+  .custom-toast.has-action {
+    align-items: center;
+  }
+
   .custom-toast-icon-circle {
     width: 34px;
     height: 34px;
@@ -1233,6 +1265,10 @@ textarea {
 
   .custom-toast-body {
     padding-top: 1px;
+  }
+
+  .custom-toast.has-action .custom-toast-body {
+    padding-top: 0;
   }
 
   .custom-toast-title {
@@ -3098,6 +3134,14 @@ summary:focus-visible,
 }
 
 /* Screen Lock Modal Idle Badge */
+.screen-lock-input-field {
+  font-size: 14px !important;
+}
+
+.screen-lock-input-field::placeholder {
+  font-size: 14px !important;
+}
+
 .screen-lock-idle-badge {
   font-size: 10.5px;
   color: #0369a1;

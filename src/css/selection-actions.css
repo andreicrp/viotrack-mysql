@@ -23,6 +23,10 @@
   font-weight: 700 !important;
 }
 
+[data-theme="dark"] .bulk-selection-bar .bulk-selection-count {
+  color: #ffffff !important;
+}
+
 .bulk-selection-count::before {
   content: '';
   width: 8px;

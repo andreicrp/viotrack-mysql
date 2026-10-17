@@ -134,6 +134,17 @@ export const LoginPage = () => {
       success(`Welcome back! Signed in as ${authenticatedUser.role === 'admin' ? 'Administrator' : 'Faculty'}.`);
       navigate(getSafeDestination(authenticatedUser.role, rawTargetDestination));
     } catch (authIssue) {
+      if (authIssue.status !== 401) {
+        if (!authIssue.status) {
+          showError('Cannot reach the login service. Make sure npm run dev is running and the database is available.');
+        } else if (authIssue.status >= 500) {
+          showError('The login service could not complete the request. Check the API and database output, then retry.');
+        } else {
+          showError(authIssue.message || 'Unable to sign in. Please retry.');
+        }
+        return;
+      }
+
       const nextFailed = (throttle.failedAttempts || 0) + 1;
       let nextLockout = 0;
       let alertMsg = authIssue.message || 'Authentication failed. Please verify your credentials.';
@@ -232,24 +243,8 @@ export const LoginPage = () => {
 
         {/* Logged out & Expiration alerts */}
         {queryParams.get('logged_out') === 'expired' && (
-          <div
-            style={{
-              background: '#fffbeb',
-              color: '#b45309',
-              border: '1px solid #fde68a',
-              padding: '12px 14px',
-              borderRadius: '12px',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '16px',
-              width: '100%',
-              boxSizing: 'border-box'
-            }}
-          >
-            <CheckCircle2 size={16} color="#d97706" />
+          <div className="login-session-expired" role="status" aria-live="polite">
+            <CheckCircle2 size={16} aria-hidden="true" />
             <span>Session Timed Out. Please sign in again.</span>
           </div>
         )}
@@ -305,7 +300,7 @@ export const LoginPage = () => {
                 id="login-email"
                 type="text"
                 className="login-text-input-clean"
-                placeholder="Institutional Email"
+                placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

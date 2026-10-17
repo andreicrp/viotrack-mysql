@@ -433,10 +433,10 @@ export const SaveAsModal = ({
           display: flex;
           align-items: center;
           background: #ffffff;
-          border-radius: 8px;
+          border-radius: 10px;
           border: 1.5px solid #cbd5e1;
-          padding: 0 8px 0 12px;
-          height: 42px;
+          padding: 0 10px 0 14px;
+          height: 46px;
           min-width: 0;
           box-shadow: 0 1px 2px rgba(0,0,0,0.04);
           transition: border-color 0.15s ease;
@@ -487,6 +487,9 @@ export const SaveAsModal = ({
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          line-height: 1.35;
         }
         @media (min-width: 768px) {
           .saveas-body {
@@ -550,13 +553,21 @@ export const SaveAsModal = ({
           background: #1b1b1b !important;
         }
         [data-theme="dark"] .saveas-modal .saveas-input-box {
-          background: transparent !important;
-          border: none !important;
-          box-shadow: none !important;
+          background: #050505 !important;
+          border: 1.5px solid #3a3a3a !important;
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4) !important;
         }
         [data-theme="dark"] .saveas-modal .saveas-input-box:focus-within {
-          border: none !important;
+          border-color: #a3a3a3 !important;
+          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
+        }
+        [data-theme="dark"] .saveas-modal .saveas-file-input {
+          background: transparent !important;
+          border: 0 !important;
           box-shadow: none !important;
+          outline: 0 !important;
+          color: #f8fafc !important;
+          -webkit-text-fill-color: #f8fafc !important;
         }
         [data-theme="dark"] .saveas-modal input,
         [data-theme="dark"] .saveas-modal button,

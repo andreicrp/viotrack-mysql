@@ -357,8 +357,8 @@ html[data-theme="dark"] body .approve-incident-dialog .approve-incident-severity
 }
 
 [data-theme="dark"] .summons-modal-backdrop .psm-mobile-fab svg {
-  color: #000000 !important;
-  stroke: #000000 !important;
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 [data-theme="dark"] .summons-modal-backdrop .psm-mobile-drawer-content {
@@ -742,14 +742,15 @@ html[data-theme="dark"] body .approve-incident-dialog .approve-incident-severity
 }
 
 [data-theme="dark"] .resolution-modal-backdrop .res-mobile-fab {
-  background: #ffffff !important;
-  color: #000000 !important;
-  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2) !important;
+  background: #080808 !important;
+  border: 1px solid #383838 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55) !important;
 }
 
 [data-theme="dark"] .resolution-modal-backdrop .res-mobile-fab svg {
-  color: #000000 !important;
-  stroke: #000000 !important;
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 [data-theme="dark"] .resolution-modal-backdrop .res-mobile-drawer-content {
@@ -798,9 +799,15 @@ html[data-theme="dark"] body .approve-incident-dialog .approve-incident-severity
 }
 
 [data-theme="dark"] .pdm-modal-backdrop .pdm-mobile-fab {
-  background: #ffffff !important;
-  color: #000000 !important;
-  box-shadow: none !important;
+  background: #080808 !important;
+  border: 1px solid #383838 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55) !important;
+}
+
+[data-theme="dark"] .pdm-modal-backdrop .pdm-mobile-fab svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 [data-theme="dark"] .pdm-modal-backdrop .pdm-mobile-drawer {

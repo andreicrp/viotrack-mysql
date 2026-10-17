@@ -94,7 +94,7 @@ export const Sidebar = ({ isCollapsed, isMobileOpen, onCloseMobile }) => {
 
       {/* Main Sidebar Drawer */}
       <aside
-        className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'active' : ''}`}
+        className={`sidebar ${isCollapsed && !isMobileOpen ? 'collapsed' : ''} ${isMobileOpen ? 'active' : ''}`}
         id="sidebar"
       >
         {/* Mobile Header Inside Drawer */}

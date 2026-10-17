@@ -308,6 +308,133 @@
   gap: 8px !important;
 }
 
+/* Incident status editor refinements */
+.incident-status-body {
+  gap: 14px !important;
+  scrollbar-gutter: stable;
+}
+
+.incident-status-summary {
+  min-height: 82px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.incident-status-categories {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.incident-status-category-tab {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.incident-status-option {
+  min-height: 66px;
+}
+
+.incident-status-option:not(.is-selected):hover {
+  border-color: #94a3b8 !important;
+  background: #f8fafc !important;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08) !important;
+  transform: translateY(-1px);
+}
+
+.incident-status-option:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+
+.incident-status-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+}
+
+[data-theme="dark"] .incident-status-summary {
+  background: linear-gradient(135deg, #101010, #080808) !important;
+  border-color: #363636 !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.24) !important;
+}
+
+[data-theme="dark"] .incident-status-category-tab.is-active {
+  border: 1px solid #bdbdbd !important;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .incident-status-option:not(.is-selected) {
+  background: #090909 !important;
+  border-color: #363636 !important;
+}
+
+[data-theme="dark"] .incident-status-option:not(.is-selected):hover {
+  background: #151515 !important;
+  border-color: #777777 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .incident-status-option:focus-visible {
+  outline-color: rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="dark"] .incident-status-footer {
+  background: rgba(0, 0, 0, 0.96) !important;
+  border-top-color: #303030 !important;
+  backdrop-filter: blur(12px);
+}
+
+@media (max-width: 560px) {
+  .incident-status-body {
+    padding: 14px !important;
+    gap: 12px !important;
+  }
+
+  .incident-status-summary {
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  .incident-status-categories {
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .incident-status-categories::-webkit-scrollbar {
+    display: none;
+  }
+
+  .incident-status-category-tab {
+    flex: 0 0 auto !important;
+    padding: 8px 10px !important;
+  }
+
+  .incident-status-option {
+    gap: 10px !important;
+    padding: 11px !important;
+  }
+
+  .incident-status-option-icon {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .incident-status-footer {
+    padding: 12px 14px !important;
+  }
+
+  .incident-status-footer > div:last-child {
+    width: 100%;
+  }
+
+  .incident-status-footer > div:last-child button {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 .btn-update-status {
   background: #6366f1 !important;
   color: #fff !important;

@@ -4,6 +4,7 @@ import { EditTeacherModal } from '../components/teachers/EditTeacherModal';
 import { AppointAdviserModal } from '../components/teachers/AppointAdviserModal';
 import { BulkImportTeachersModal } from '../components/teachers/BulkImportTeachersModal';
 import { CustomSelect } from '../components/common/CustomSelect';
+import { CompactPagination } from '../components/common/CompactPagination';
 import { ViewModeToggle } from '../components/common/ViewModeToggle';
 import { StudentInitialsAvatar } from '../components/students/StudentInitialsAvatar';
 import { useAuth } from '../context/AuthContext';
@@ -1074,7 +1075,7 @@ export const TeachersPage = () => {
                   {/* Middle Row: Department & Contact */}
                   <div className="teacher-mobile-list-details" style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f8fafc', padding: '8px 10px', borderRadius: '8px', fontSize: '12px', color: '#475569' }}>
                     <div style={{ fontWeight: 600, color: '#334155' }}>
-                      {teacher.department || 'Faculty Department'}
+                      <strong>Department:</strong> {teacher.department || 'Faculty Department'}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Mail size={12} color="#94a3b8" />
@@ -1159,58 +1160,7 @@ export const TeachersPage = () => {
             {Math.min(currentPage * entriesPerPage, filteredAndSorted.length)} of {filteredAndSorted.length} teachers
           </span>
 
-          <div className="pagination-btn-group" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <button
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(1)}
-              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: currentPage > 1 ? 'pointer' : 'default', fontSize: '12px' }}
-            >
-              «
-            </button>
-            <button
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: currentPage > 1 ? 'pointer' : 'default', fontSize: '12px' }}
-            >
-              ‹
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-              <button
-                key={pageNum}
-                onClick={() => setCurrentPage(pageNum)}
-                aria-current={pageNum === currentPage ? 'page' : undefined}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  background: pageNum === currentPage ? '#0f172a' : '#ffffff',
-                  color: pageNum === currentPage ? '#ffffff' : '#334155',
-                  fontWeight: 700,
-                  fontSize: '12px',
-                  cursor: 'pointer'
-                }}
-              >
-                {pageNum}
-              </button>
-            ))}
-
-            <button
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: currentPage < totalPages ? 'pointer' : 'default', fontSize: '12px' }}
-            >
-              ›
-            </button>
-            <button
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage(totalPages)}
-              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: currentPage < totalPages ? 'pointer' : 'default', fontSize: '12px' }}
-            >
-              »
-            </button>
-          </div>
+          <CompactPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} ariaLabel="Teachers pagination" />
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import { dataService } from '../services/dataService';
 import { CustomSelect } from '../components/common/CustomSelect';
+import { CompactPagination } from '../components/common/CompactPagination';
 import { ViewModeToggle } from '../components/common/ViewModeToggle';
 import { StudentInitialsAvatar } from '../components/students/StudentInitialsAvatar';
 import { BulkImportAdminsModal } from '../components/admin/BulkImportAdminsModal';
@@ -1113,58 +1114,7 @@ export const AdminUsersPage = () => {
             {Math.min(currentPage * entriesPerPage, filteredAndSorted.length)} of {filteredAndSorted.length} administrators
           </span>
 
-          <div className="pagination-btn-group" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <button
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(1)}
-              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: currentPage > 1 ? 'pointer' : 'default', fontSize: '12px' }}
-            >
-              «
-            </button>
-            <button
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: currentPage > 1 ? 'pointer' : 'default', fontSize: '12px' }}
-            >
-              ‹
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-              <button
-                key={pageNum}
-                onClick={() => setCurrentPage(pageNum)}
-                aria-current={pageNum === currentPage ? 'page' : undefined}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  background: pageNum === currentPage ? '#0f172a' : '#ffffff',
-                  color: pageNum === currentPage ? '#ffffff' : '#334155',
-                  fontWeight: 700,
-                  fontSize: '12px',
-                  cursor: 'pointer'
-                }}
-              >
-                {pageNum}
-              </button>
-            ))}
-
-            <button
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: currentPage < totalPages ? 'pointer' : 'default', fontSize: '12px' }}
-            >
-              ›
-            </button>
-            <button
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage(totalPages)}
-              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: currentPage < totalPages ? 'pointer' : 'default', fontSize: '12px' }}
-            >
-              »
-            </button>
-          </div>
+          <CompactPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} ariaLabel="Administrators pagination" />
         </div>
       </div>
 

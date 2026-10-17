@@ -172,7 +172,7 @@ const ToastItem = ({ toast, onRemove }) => {
 
   return (
     <div
-      className={`custom-toast custom-toast-${toast.type} ${isExiting ? 'is-exiting' : 'is-entering'} ${isDragging ? 'is-dragging' : ''}`}
+      className={`custom-toast custom-toast-${toast.type} ${toast.action ? 'has-action' : ''} ${isExiting ? 'is-exiting' : 'is-entering'} ${isDragging ? 'is-dragging' : ''}`}
       style={{
         ...dragStyles
       }}

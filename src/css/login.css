@@ -115,6 +115,253 @@
   transition: box-shadow 0.3s ease;
 }
 
+.login-session-expired {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.login-session-expired svg {
+  flex: 0 0 auto;
+  color: #b45309;
+}
+
+.login-support-backdrop {
+  padding: 16px !important;
+  overflow-y: auto;
+}
+
+.login-support-card {
+  width: min(100%, 420px) !important;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.login-support-header,
+.login-support-heading {
+  display: flex;
+  align-items: center;
+}
+
+.login-support-header {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.login-support-heading {
+  min-width: 0;
+  gap: 10px;
+}
+
+.login-support-heading .login-reset-password-icon {
+  flex: 0 0 auto;
+  color: #07345f;
+}
+
+.login-support-title,
+.login-support-heading .login-reset-password-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.login-support-icon-button {
+  display: inline-flex;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+}
+
+.login-support-icon-button:hover {
+  background: #eef2f7;
+  color: #0f172a;
+}
+
+.login-support-description {
+  margin: 14px 0 16px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.login-support-options {
+  display: grid;
+  gap: 10px;
+}
+
+.login-support-email-link,
+.login-support-visit {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.login-support-email-link:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.login-support-email-link > svg,
+.login-support-visit > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #07345f;
+}
+
+.login-support-email-link > span,
+.login-support-visit > span {
+  display: block;
+  min-width: 0;
+}
+
+.login-support-email-link strong,
+.login-support-visit strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #0f172a;
+}
+
+.login-support-email-address {
+  display: block;
+  color: #475569;
+  overflow-wrap: anywhere;
+}
+
+.login-support-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.login-support-close-button {
+  min-width: 84px;
+  padding: 9px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-support-close-button:hover {
+  background: #f1f5f9;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-heading .login-reset-password-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-description {
+  color: #aab6c4 !important;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-icon-button {
+  border-color: #303030 !important;
+  background: #111111 !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-icon-button:hover {
+  background: #202020 !important;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-email-link {
+  background: #f8fafc !important;
+  border-color: #dbe4ef !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-email-link > span,
+html[data-theme="dark"] body .login-body-bg .login-support-email-link strong,
+html[data-theme="dark"] body .login-body-bg .login-support-email-link .login-support-email-address {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-email-link svg {
+  color: #07345f !important;
+  stroke: #07345f !important;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-visit {
+  background: #111111 !important;
+  border-color: #303030 !important;
+  color: #cbd5e1 !important;
+  -webkit-text-fill-color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-visit strong,
+html[data-theme="dark"] body .login-body-bg .login-support-visit svg {
+  color: #f8fafc !important;
+  stroke: #f8fafc !important;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-footer {
+  border-top-color: #303030;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-support-close-button {
+  border-color: #3a3a3a !important;
+  background: #f8fafc !important;
+  color: #111111 !important;
+}
+
+@media (max-width: 480px) {
+  .login-support-card {
+    padding: 20px !important;
+    border-radius: 16px !important;
+  }
+
+  .login-support-heading .login-reset-password-title {
+    font-size: 16px;
+  }
+}
+
+html[data-theme="dark"] body .login-body-bg .login-session-expired {
+  border-color: #713f12;
+  background: #241a0b;
+  color: #fcd34d;
+}
+
+html[data-theme="dark"] body .login-body-bg .login-session-expired svg {
+  color: #fbbf24;
+}
+
 /* Input Fields */
 .login-input-field-wrap {
   margin-bottom: 12px;
@@ -176,6 +423,11 @@
 
 .login-eye-toggle-btn:hover {
   color: #07345F;
+}
+
+.login-eye-toggle-btn:active {
+  transform: translateY(-50%) !important;
+  transition: color 0.2s ease !important;
 }
 
 /* Checkbox & Forgot Password Row */

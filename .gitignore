@@ -24,6 +24,7 @@ dist
 dist-server
 dist-ssr
 *.local
+/LanguageTool/
 
 # Editor directories and files
 .vscode/*

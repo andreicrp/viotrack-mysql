@@ -12,8 +12,7 @@ import {
   X,
   Shield,
   Layers,
-  ArrowRight,
-  Sparkles
+  ArrowRight
 } from 'lucide-react';
 
 export const StatusModal = ({ isOpen, onClose, record, onUpdated }) => {
@@ -132,14 +131,17 @@ export const StatusModal = ({ isOpen, onClose, record, onUpdated }) => {
     return true;
   });
 
-  const handleUpdate = () => {
-    if (!selectedStatus) return;
+  const handleUpdate = async () => {
+    if (!selectedStatus || loading) return;
     setLoading(true);
-    setTimeout(() => {
-      onUpdated?.(record.id, selectedStatus);
-      setLoading(false);
+    try {
+      await onUpdated?.(record.id, selectedStatus);
       onClose();
-    }, 150);
+    } catch {
+      // The calling page reports save failures.
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isChanged = selectedStatus !== currentStatus;
@@ -153,7 +155,7 @@ export const StatusModal = ({ isOpen, onClose, record, onUpdated }) => {
       maxWidth="600px"
     >
       <div
-        className="modal-body"
+        className="incident-status-body"
         style={{
           padding: '20px 24px',
           display: 'flex',
@@ -162,7 +164,6 @@ export const StatusModal = ({ isOpen, onClose, record, onUpdated }) => {
           maxHeight: '75vh',
           overflowY: 'auto'
         }}
-        className="incident-status-body"
       >
         {/* Incident Summary Card Header */}
         <div
@@ -420,20 +421,22 @@ export const StatusModal = ({ isOpen, onClose, record, onUpdated }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
           background: '#f8fafc'
         }}
       >
-        <div style={{ fontSize: '12px', color: '#64748b' }}>
+        <div style={{ minWidth: 0, flex: '1 1 220px', fontSize: '12px', color: '#64748b' }}>
           {isChanged ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#07345f', fontWeight: 600 }}>
-              <Sparkles size={13} color="#f59e0b" /> Changing from <strong>{currentStatus}</strong> → <strong>{selectedStatus}</strong>
+            <span className="incident-status-change-summary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', color: '#07345f', fontWeight: 600 }}>
+              <strong>{currentStatus}</strong> → <strong>{selectedStatus}</strong>
             </span>
           ) : (
             <span>Select a new status to apply</span>
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', flex: '0 0 auto', justifyContent: 'flex-end', gap: '10px' }}>
           <button
             type="button"
             className="btn btn-secondary"

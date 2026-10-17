@@ -30,7 +30,8 @@ import {
   ChevronLeft,
   SlidersHorizontal,
   Check,
-  Maximize2
+  Maximize2,
+  Upload
 } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
@@ -40,6 +41,8 @@ import { printOrShareDocument, shareOrSaveNativeFile, downloadBlobFile } from '.
 import { getJsPDF, loadPublicImageAsBase64 } from '../../utils/pdfHelper';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import { CustomTimePicker } from '../common/CustomTimePicker';
+import { LanguageToolTextarea } from '../common/LanguageToolTextarea';
+import { readSignatureImage, signatureImageFormat } from '../../utils/signatureImage';
 
 /**
  * Builds the complete, authentic Philippine Institutional Parent Summons Notice HTML for direct printing
@@ -57,9 +60,11 @@ export const buildParentSummonsHtml = ({
   customRemarks,
   signatory1Name,
   signatory1Title,
+  signatory1Signature,
   includeSignatory2,
   signatory2Name,
-  signatory2Title
+  signatory2Title,
+  signatory2Signature
 }) => {
   const rawGrade = activeStudent?.grade || 'Grade 10';
   const formattedGrade = rawGrade.toString().toLowerCase().startsWith('grade') ? rawGrade : `Grade ${rawGrade}`;
@@ -276,16 +281,30 @@ export const buildParentSummonsHtml = ({
       text-align: left;
     }
     .sig-line {
+      position: relative;
       border-top: 1.5px solid #0f172a;
       width: 210px;
       padding-top: 4px;
       margin-top: 28px;
+      min-height: 44px;
     }
     .sig-line-right {
+      position: relative;
       border-top: 1.5px solid #0f172a;
       width: 210px;
       padding-top: 4px;
       margin-top: 28px;
+      min-height: 44px;
+    }
+    .summons-signature-image {
+      position: absolute;
+      width: 170px;
+      max-width: 100%;
+      height: 38px;
+      object-fit: contain;
+      left: 50%;
+      bottom: calc(100% + 2px);
+      transform: translateX(-50%);
     }
     .sig-name {
       font-size: 10.5pt;
@@ -394,6 +413,7 @@ export const buildParentSummonsHtml = ({
       <div class="signatures-row">
         <div class="sig-col">
           <div class="sig-line">
+            ${signatory1Signature ? `<img class="summons-signature-image" src="${signatory1Signature}" alt="${signatory1Name} signature" />` : ''}
             <span class="sig-name">${signatory1Name}</span>
             <span class="sig-title">${signatory1Title}</span>
           </div>
@@ -401,6 +421,7 @@ export const buildParentSummonsHtml = ({
         ${includeSignatory2 ? `
         <div class="sig-col-right">
           <div class="sig-line-right">
+            ${signatory2Signature ? `<img class="summons-signature-image" src="${signatory2Signature}" alt="${signatory2Name} signature" />` : ''}
             <span class="sig-name">${signatory2Name}</span>
             <span class="sig-title">${signatory2Title}</span>
           </div>
@@ -669,11 +690,24 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
   // Signatory 1 (Left - Prefect / Discipline Officer)
   const [signatory1Name, setSignatory1Name] = useState('Sheryl Gamboa');
   const [signatory1Title, setSignatory1Title] = useState('Prefect of Discipline / Disciplinary Committee');
+  const [signatory1Signature, setSignatory1Signature] = useState('');
 
   // Signatory 2 (Right - Class Adviser / Department Head)
   const [includeSignatory2, setIncludeSignatory2] = useState(true);
   const [signatory2Name, setSignatory2Name] = useState('Class Adviser');
   const [signatory2Title, setSignatory2Title] = useState('Department Head');
+  const [signatory2Signature, setSignatory2Signature] = useState('');
+
+  const handleSignatureUpload = async (event, setSignature) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      setSignature(await readSignatureImage(file));
+    } catch (uploadError) {
+      error(uploadError.message);
+    }
+  };
 
   const [customRemarks, setCustomRemarks] = useState(
     'Please bring a valid government/company ID. Your cooperation is vital to supporting your child\'s academic and personal character development.'
@@ -707,6 +741,8 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
     venue,
     signatory1Name,
     signatory2Name,
+    signatory1Signature,
+    signatory2Signature,
     includeSignatory2,
     customRemarks,
     selectedViolationIds.length,
@@ -1021,6 +1057,9 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.text(signatory1Title, 14, currentY + 4);
+    if (signatory1Signature) {
+      try { doc.addImage(signatory1Signature, signatureImageFormat(signatory1Signature), 22, currentY - 17, 58, 14); } catch {}
+    }
 
     if (includeSignatory2) {
       doc.setFont('helvetica', 'bold');
@@ -1029,6 +1068,9 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.text(signatory2Title, 130, currentY + 4);
+      if (signatory2Signature) {
+        try { doc.addImage(signatory2Signature, signatureImageFormat(signatory2Signature), 128, currentY - 17, 58, 14); } catch {}
+      }
     }
 
     // Tear-off slip
@@ -1069,9 +1111,11 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
         customRemarks,
         signatory1Name,
         signatory1Title,
+        signatory1Signature,
         includeSignatory2,
         signatory2Name,
-        signatory2Title
+        signatory2Title,
+        signatory2Signature
       });
 
       await printOrShareDocument({
@@ -1349,6 +1393,11 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
                 boxSizing: 'border-box'
               }}
             />
+            <label className="psm-signature-upload" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '6px', padding: '5px 9px', border: '1px solid var(--border-medium, #cbd5e1)', borderRadius: '6px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary, #475569)' }}>
+              <Upload size={12} /> {signatory1Signature ? 'Replace digital signature' : 'Insert digital signature'}
+              <input type="file" accept="image/png,image/jpeg" onChange={(event) => handleSignatureUpload(event, setSignatory1Signature)} style={{ display: 'none' }} />
+            </label>
+            {signatory1Signature && <button type="button" onClick={() => setSignatory1Signature('')} style={{ marginLeft: '8px', border: 0, background: 'none', color: '#b91c1c', fontSize: '10px', cursor: 'pointer' }}>Remove</button>}
           </div>
         </div>
 
@@ -1416,6 +1465,11 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
                   boxSizing: 'border-box'
                 }}
               />
+              <label className="psm-signature-upload" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '6px', padding: '5px 9px', border: '1px solid var(--border-medium, #cbd5e1)', borderRadius: '6px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary, #475569)' }}>
+                <Upload size={12} /> {signatory2Signature ? 'Replace digital signature' : 'Insert digital signature'}
+                <input type="file" accept="image/png,image/jpeg" onChange={(event) => handleSignatureUpload(event, setSignatory2Signature)} style={{ display: 'none' }} />
+              </label>
+              {signatory2Signature && <button type="button" onClick={() => setSignatory2Signature('')} style={{ marginLeft: '8px', border: 0, background: 'none', color: '#b91c1c', fontSize: '10px', cursor: 'pointer' }}>Remove</button>}
             </div>
           ) : (
             <span style={{ fontSize: '11px', color: 'var(--text-secondary, #64748b)', fontStyle: 'italic', padding: '4px 0' }}>
@@ -1430,10 +1484,11 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
         <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary, #334155)', marginBottom: '4px' }}>
           <MessageSquare size={13} color="currentColor" /> Meeting Agenda &amp; Notes
         </label>
-        <textarea
+        <LanguageToolTextarea
           rows={2}
           value={customRemarks}
-          onChange={(e) => setCustomRemarks(e.target.value)}
+          onChange={setCustomRemarks}
+          placeholder="Add meeting agenda or notes..."
           style={{
             width: '100%',
             padding: '7px 11px',
@@ -1607,6 +1662,10 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
           line-height: 1.55 !important;
           box-sizing: border-box !important;
           touch-action: none;
+          cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v16l4-4 3 6 3-1-3-6h6z' fill='%230f172a' stroke='%23fff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, grab !important;
+        }
+        .psm-preview-paper.is-dragging {
+          cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v16l4-4 3 6 3-1-3-6h6z' fill='%230f172a' stroke='%23fff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, grabbing !important;
         }
         .psm-letterhead {
           display: flex !important;
@@ -1726,6 +1785,7 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
           gap: 20px !important;
         }
         .psm-sig-line {
+          position: relative !important;
           border-top: 1.5px solid #0f172a !important;
           width: 210px !important;
           padding-top: 4px !important;
@@ -2225,10 +2285,7 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
                 }}
               >
                 <div
-                  className="psm-preview-paper"
-                  style={{
-                    cursor: isDragging ? 'grabbing' : 'grab'
-                  }}
+                  className={`psm-preview-paper${isDragging ? ' is-dragging' : ''}`}
                   onMouseDown={handleMouseDown}
                   onTouchStart={handleTouchStart}
                 >
@@ -2371,7 +2428,9 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
                   {/* Signatures */}
                   <div className="psm-signatures-row">
                     <div>
-                      <div style={{ height: '24px' }} />
+                      <div style={{ width: '210px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
+                        {signatory1Signature && <img src={signatory1Signature} alt={`${signatory1Name} signature`} style={{ width: '170px', height: '38px', objectFit: 'contain' }} />}
+                      </div>
                       <div className="psm-sig-line">
                         <strong style={{ fontSize: '12px', display: 'block', color: '#0f172a' }}>{signatory1Name}</strong>
                         <span style={{ fontSize: '10.5px', color: '#64748b', display: 'block' }}>{signatory1Title}</span>
@@ -2380,7 +2439,9 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
 
                     {includeSignatory2 && (
                       <div>
-                        <div style={{ height: '24px' }} />
+                        <div style={{ width: '210px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
+                          {signatory2Signature && <img src={signatory2Signature} alt={`${signatory2Name} signature`} style={{ width: '170px', height: '38px', objectFit: 'contain' }} />}
+                        </div>
                         <div className="psm-sig-line">
                           <strong style={{ fontSize: '12px', display: 'block', color: '#0f172a' }}>{signatory2Name}</strong>
                           <span style={{ fontSize: '10.5px', color: '#64748b', display: 'block' }}>{signatory2Title}</span>
@@ -2540,3 +2601,4 @@ export const ParentSummonsModal = ({ isOpen, onClose, record, student, records }
     </div>
   );
 };
+

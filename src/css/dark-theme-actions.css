@@ -379,7 +379,7 @@ html[data-theme="dark"] body .approval-mobile-card-actions button > .approval-mo
   }
 
   [data-theme="dark"] .student-mobile-list-details .student-mobile-list-strand {
-    color: #86efac !important;
+    color: #ffffff !important;
   }
 
   [data-theme="dark"] .student-mobile-list-details > div:last-child,
@@ -928,7 +928,6 @@ html[data-theme="dark"] body .teacher-mobile-list-actions button,
 html[data-theme="dark"] body .admin-mobile-list-actions button,
 html[data-theme="dark"] body .admin-mobile-action,
 html[data-theme="dark"] body .approval-mobile-card-actions button,
-html[data-theme="dark"] body .violation-list-mobile-actions button,
 html[data-theme="dark"] body .violation-catalog-mobile-actions button,
 html[data-theme="dark"] body .adviser-btn-remove {
   background: #ffffff !important;
@@ -947,7 +946,6 @@ html[data-theme="dark"] body .teacher-mobile-list-actions button svg,
 html[data-theme="dark"] body .admin-mobile-list-actions button svg,
 html[data-theme="dark"] body .admin-mobile-action svg,
 html[data-theme="dark"] body .approval-mobile-card-actions button svg,
-html[data-theme="dark"] body .violation-list-mobile-actions button svg,
 html[data-theme="dark"] body .violation-catalog-mobile-actions button svg,
 html[data-theme="dark"] body .adviser-btn-remove svg {
   color: #000000 !important;
@@ -963,7 +961,6 @@ html[data-theme="dark"] body .teacher-mobile-list-actions button:hover,
 html[data-theme="dark"] body .admin-mobile-list-actions button:hover,
 html[data-theme="dark"] body .admin-mobile-action:hover,
 html[data-theme="dark"] body .approval-mobile-card-actions button:hover,
-html[data-theme="dark"] body .violation-list-mobile-actions button:hover,
 html[data-theme="dark"] body .violation-catalog-mobile-actions button:hover,
 html[data-theme="dark"] body .adviser-btn-remove:hover {
   background: #e5e5e5 !important;
@@ -982,7 +979,6 @@ html[data-theme="dark"] body .teacher-mobile-list-actions button:hover svg,
 html[data-theme="dark"] body .admin-mobile-list-actions button:hover svg,
 html[data-theme="dark"] body .admin-mobile-action:hover svg,
 html[data-theme="dark"] body .approval-mobile-card-actions button:hover svg,
-html[data-theme="dark"] body .violation-list-mobile-actions button:hover svg,
 html[data-theme="dark"] body .violation-catalog-mobile-actions button:hover svg,
 html[data-theme="dark"] body .adviser-btn-remove:hover svg {
   color: #000000 !important;
@@ -1012,7 +1008,11 @@ html[data-theme="dark"] body .admin-mobile-list-email span {
 }
 
 html[data-theme="dark"] body .student-mobile-list-details .student-mobile-list-strand {
-  color: #86efac !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] body .student-mobile-list-id strong {
+  color: #ffffff !important;
 }
 
 html[data-theme="dark"] body .student-mobile-list-details > div:last-child {
@@ -1023,4 +1023,28 @@ html[data-theme="dark"] body .teacher-mobile-list-details svg,
 html[data-theme="dark"] body .admin-mobile-list-email svg {
   color: #a3a3a3 !important;
   stroke: #a3a3a3 !important;
+}
+
+html[data-theme="dark"] body .student-mobile-list-card,
+html[data-theme="dark"] body .teacher-mobile-list-card,
+html[data-theme="dark"] body .violation-list-mobile-card,
+html[data-theme="dark"] body .admin-mobile-list-card,
+html[data-theme="dark"] body .violation-catalog-list-card,
+html[data-theme="dark"] body .approval-mobile-card {
+  border: 1px solid #3a3a3a !important;
+  border-color: #3a3a3a !important;
+  outline: none !important;
+}
+
+html[data-theme="dark"] body .student-mobile-list-card.is-selected,
+html[data-theme="dark"] body .teacher-mobile-list-card.is-selected,
+html[data-theme="dark"] body .violation-list-mobile-card.is-selected,
+html[data-theme="dark"] body .admin-mobile-list-card.is-selected,
+html[data-theme="dark"] body .violation-catalog-list-card.is-selected,
+html[data-theme="dark"] body .approval-mobile-card.is-selected {
+  background: #242424 !important;
+  border: 1.5px solid #737373 !important;
+  border-color: #737373 !important;
+  outline: none !important;
+  box-shadow: none !important;
 }

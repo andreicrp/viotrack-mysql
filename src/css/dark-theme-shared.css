@@ -1286,6 +1286,39 @@ html[data-theme="dark"] body .screen-lock-idle-badge svg {
   stroke: #c084fc !important;
 }
 
+[data-theme="dark"] .record-status-pill--conference-first {
+  background: rgba(14, 165, 233, 0.14) !important;
+  border-color: rgba(56, 189, 248, 0.38) !important;
+  color: #7dd3fc !important;
+}
+
+[data-theme="dark"] .record-status-pill--conference-first svg {
+  color: #7dd3fc !important;
+  stroke: #7dd3fc !important;
+}
+
+[data-theme="dark"] .record-status-pill--conference-second {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(251, 191, 36, 0.38) !important;
+  color: #fcd34d !important;
+}
+
+[data-theme="dark"] .record-status-pill--conference-second svg {
+  color: #fcd34d !important;
+  stroke: #fcd34d !important;
+}
+
+[data-theme="dark"] .record-status-pill--conference-third {
+  background: rgba(239, 68, 68, 0.14) !important;
+  border-color: rgba(248, 113, 113, 0.38) !important;
+  color: #fca5a5 !important;
+}
+
+[data-theme="dark"] .record-status-pill--conference-third svg {
+  color: #fca5a5 !important;
+  stroke: #fca5a5 !important;
+}
+
 [data-theme="dark"] .approval-inspection-dialog .approval-inspection-student-card,
 [data-theme="dark"] .approval-inspection-dialog .approval-inspection-offense-card,
 [data-theme="dark"] .approval-inspection-dialog .approval-inspection-sanction-card,
@@ -1851,6 +1884,11 @@ html[data-theme="dark"] body .legal-btn-close:focus-visible {
 [data-theme="dark"] .incident-status-footer {
   background: #000000 !important;
   border-color: #242424 !important;
+}
+
+[data-theme="dark"] .incident-status-change-summary {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 [data-theme="dark"] .incident-status-footer .btn-secondary {
