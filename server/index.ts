@@ -1634,15 +1634,21 @@ const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
 };
 app.use(errorHandler);
 
-const server = app.listen(port, () => {
-  console.log(`VioTrack API listening on port ${port}`);
-});
-
-const shutdown = async () => {
-  server.close(async () => {
-    await prisma.$disconnect();
-    process.exit(0);
+// Vercel invokes the exported Express app as a serverless function. Local and
+// self-hosted deployments continue to use the long-running HTTP listener.
+if (!process.env.VERCEL) {
+  const server = app.listen(port, () => {
+    console.log(`VioTrack API listening on port ${port}`);
   });
-};
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+
+  const shutdown = async () => {
+    server.close(async () => {
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+}
+
+export default app;

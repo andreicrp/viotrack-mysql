@@ -29,8 +29,23 @@ const defaultFrontendOrigins = [
 ];
 
 export const isAllowedFrontendOrigin = (origin: string) => {
+  const vercelOrigins = [
+    process.env.VERCEL_URL,
+    process.env.VERCEL_BRANCH_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  ]
+    .filter((host): host is string => Boolean(host))
+    .map((host) => {
+      try {
+        return new URL(host.includes("://") ? host : `https://${host}`).origin;
+      } catch {
+        return "";
+      }
+    })
+    .filter(Boolean);
   const allowedOrigins = [
     ...defaultFrontendOrigins,
+    ...vercelOrigins,
     ...(process.env.FRONTEND_ORIGINS ?? "")
       .split(",")
       .map((item) => item.trim())

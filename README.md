@@ -146,6 +146,9 @@ If port 5173 is already in use, run Vite on another local port, for example `npm
 
 Production: run `npm run build` and `npm run build:server`, then start the Node server with `npm run server:start`. It serves the built frontend and API from one origin.
 
+### Deploying to Vercel
+The Vercel configuration builds the Vite app into `dist` and routes `/api/*` requests to the Express function in `api/[...path].ts`; the remaining routes fall back to the SPA. In the Vercel project settings, add the server environment variables `DATABASE_URL` (a reachable hosted MySQL connection string) and `QR_HMAC_SECRET` (a private random secret). Set `FRONTEND_ORIGINS` for any custom domains; the deployment and project Vercel domains are allowed automatically. Keep `VITE_API_BASE_URL` empty so the browser calls the same-origin `/api` function. After changing environment variables, redeploy. A local `.env` file is not available to Vercel.
+
 ### Optional grammar and spelling checks
 The summons notes and resolution summary can use LanguageTool when `VITE_LANGUAGETOOL_API_URL` points to a trusted server. The app checks English (US) text after a short pause and sends only the contents of the active notes field to that endpoint. Do not configure a public service for student or case information; use an institution-controlled server. Leave the setting empty to keep checking disabled.
 
