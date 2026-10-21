@@ -43,6 +43,27 @@ describe('print report data', () => {
     }))).toHaveLength(1);
   });
 
+  it('includes records that do not require approval, matching dashboard eligibility', () => {
+    const records = [
+      record({ approval_status: 'Not Required' }),
+      record({ approvalStatus: 'not required' }),
+      record({ approval_status: 'Under Approval' }),
+      record({ approval_status: 'Rejected' })
+    ];
+
+    expect(filterPrintRecords(records, filterOptions())).toHaveLength(2);
+  });
+
+  it('falls back to a valid created date when the reported date is malformed', () => {
+    const records = [record({ date_reported: 'invalid', created_at: '2026-05-20T12:00:00' })];
+
+    expect(filterPrintRecords(records, filterOptions({
+      periodPreset: 'custom',
+      customStartDate: '2026-05-20',
+      customEndDate: '2026-05-20'
+    }))).toHaveLength(1);
+  });
+
   it('includes the full custom end date and rejects reversed or invalid date ranges', () => {
     const records = [
       record({ date_reported: '2026-05-21T23:59:59.999' }),

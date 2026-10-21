@@ -14,13 +14,14 @@ const parseLocalDate = (value) => {
 };
 
 export const getPrintRecordDate = (record) => {
-  const value = record?.date_reported || record?.created_at || record?.date;
-  if (!value) return null;
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(value))
-    ? parseLocalDate(value)
-    : new Date(value);
-  if (!date) return null;
-  return Number.isNaN(date.getTime()) ? null : date;
+  for (const value of [record?.date_reported, record?.created_at, record?.date]) {
+    if (!value) continue;
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(String(value))
+      ? parseLocalDate(value)
+      : new Date(value);
+    if (date && !Number.isNaN(date.getTime())) return date;
+  }
+  return null;
 };
 
 const getGradeNumber = (record) => {
@@ -37,10 +38,12 @@ const getSeverity = (record) => {
 const isResolved = (record) => String(record?.status || '').trim().toLowerCase() === 'resolved';
 
 export const getApprovedPrintRecords = (records = []) => records.filter((record) => {
+  const approvalStatus = String(record?.approval_status || record?.approvalStatus || '').trim().toLowerCase();
   const status = String(record?.status || '').trim().toLowerCase();
-  return String(record?.approval_status || '').trim().toLowerCase() === 'approved'
-    && status !== 'under approval'
-    && status !== 'rejected';
+  if (['under approval', 'rejected'].includes(approvalStatus) || ['under approval', 'rejected'].includes(status)) {
+    return false;
+  }
+  return approvalStatus === 'approved' || approvalStatus === 'not required';
 });
 
 export const filterPrintRecords = (
