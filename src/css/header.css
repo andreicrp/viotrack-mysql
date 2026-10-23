@@ -943,6 +943,20 @@ body {
     display: block;
 }
 
+.header-avatar-fallback {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #07345f;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
 .header-online-dot {
     position: absolute;
     bottom: -1px;
@@ -1001,6 +1015,16 @@ body {
     border: none;
     box-shadow: none;
     flex-shrink: 0;
+}
+
+.user-dropdown-avatar-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #07345f;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
 }
 
 .user-dropdown-meta {
@@ -1296,6 +1320,49 @@ body {
     }
 }
 
+@media (max-width: 360px) {
+    .main-header {
+        padding-left: max(8px, env(safe-area-inset-left, 0px));
+        padding-right: max(8px, env(safe-area-inset-right, 0px));
+    }
+
+    .header-left {
+        min-width: 0;
+        gap: 5px;
+    }
+
+    .logo-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .logo-text-mobile {
+        min-width: 0;
+        max-width: 108px;
+        overflow: hidden;
+        font-size: 15px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .header-right {
+        flex: 0 0 auto;
+        gap: 4px;
+    }
+
+    .notification-btn,
+    .header-notif-icon-btn,
+    .user-avatar,
+    .header-avatar-ring {
+        width: 30px;
+        height: 30px;
+    }
+
+    .notification-btn {
+        font-size: 14px;
+    }
+}
+
 /* Header Command Search Button */
 .header-cmd-search-btn {
     display: inline-flex;
@@ -1396,6 +1463,22 @@ body {
     background: #e2e8f0;
     color: #07345f;
     border-color: #94a3b8;
+}
+
+.header-cmd-search-btn:focus .header-kbd,
+.header-cmd-search-btn:active .header-kbd {
+    background: #dbeafe;
+    color: #07345f;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2), 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .header-cmd-search-btn:focus .header-kbd,
+[data-theme="dark"] .header-cmd-search-btn:active .header-kbd {
+    background: #172554 !important;
+    color: #bfdbfe !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.28), 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 .header-clock-pill:hover {

@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { UnderApprovalModal } from './UnderApprovalModal';
 import { dataService } from '../../services/dataService';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { LanguageToolTextarea } from '../common/LanguageToolTextarea';
+import { StudentInitialsAvatar } from '../students/StudentInitialsAvatar';
 import { claimSubmissionLock, releaseSubmissionLock } from '../../utils/dataIntegrity';
 import { lockBodyScroll, unlockBodyScroll } from '../../utils/scrollLock';
 import {
@@ -123,7 +125,7 @@ export const AddViolationModal = ({
   const loadData = async () => {
     try {
       const [sData, vData] = await Promise.all([
-        dataService.getStudents(),
+        dataService.getStudentsForReporting(),
         dataService.getViolations()
       ]);
       setStudents(sData || []);
@@ -288,6 +290,7 @@ export const AddViolationModal = ({
       return;
     }
 
+    // Teachers always require approval; admins can explicitly send a report for review.
     const isApprovalMode = isTeacher || formData.status === 'Under Approval';
     setLoading(true);
 
@@ -345,7 +348,7 @@ export const AddViolationModal = ({
             student_id_value: student.student_id,
             violation_id: Number(violation.id),
             reported_by_name: user?.name || (isTeacher ? 'Faculty Teacher' : 'Authorized Administrator'),
-            reported_by_type: isTeacher ? 'teacher' : isApprovalMode ? 'teacher' : (user?.role || 'admin'),
+            reported_by_type: user?.role || (isTeacher ? 'teacher' : 'admin'),
             sanction: formData.sanction || violation.default_sanction || 'Under Review',
             remarks: formData.remarks || 'Disciplinary incident report logged.',
             status: isApprovalMode ? 'Under Approval' : formData.status,
@@ -414,8 +417,9 @@ export const AddViolationModal = ({
   const chosenStudents = students.filter((s) => selectedStudentIds.includes(Number(s.id)));
   const chosenViolations = violations.filter((v) => selectedViolationIds.includes(Number(v.id)));
 
-  return (
+  return createPortal((
     <>
+      {!isApprovalPopupOpen && (
       <div className="lvm-modal-backdrop" onClick={onClose} role="presentation">
         <div
           className="lvm-window"
@@ -628,13 +632,11 @@ export const AddViolationModal = ({
                             >
                               {/* Left Avatar + Meta */}
                               <div className="lvm-student-main">
-                                <div className="lvm-student-photo">
-                                  {s.image ? (
-                                    <img src={s.image} alt={s.fname} />
-                                  ) : (
-                                    <User size={22} />
-                                  )}
-                                </div>
+                                <StudentInitialsAvatar
+                                  student={s}
+                                  className="lvm-student-photo"
+                                  style={{ width: 44, height: 44, fontSize: 14 }}
+                                />
                                 <div className="lvm-student-text">
                                   <div className="lvm-student-name">
                                     {s.fname} {s.mname ? `${s.mname} ` : ''}{s.lname}
@@ -889,7 +891,7 @@ export const AddViolationModal = ({
                       </label>
                       <div className={`lvm-status-quad ${isTeacher ? 'teacher-mode' : ''}`}>
                         {[
-                          { id: 'Under Approval', label: 'For Approval', sub: 'Awaiting admin review', teacherAllowed: true },
+                          { id: 'Under Approval', label: 'For Approval', sub: isTeacher ? 'Awaiting admin review' : 'Hold for review before action', teacherAllowed: true },
                           { id: 'Pending', label: 'Pending', sub: 'Under review', teacherAllowed: false },
                           { id: 'Resolved', label: 'Resolved', sub: 'Already dealt with', teacherAllowed: false },
                           { id: 'Escalated', label: 'Escalated', sub: 'Referred to admin', teacherAllowed: false },
@@ -1141,6 +1143,7 @@ export const AddViolationModal = ({
           </div>
         </div>
       </div>
+      )}
 
       {/* Teacher Under Approval Modal */}
       <UnderApprovalModal
@@ -1151,7 +1154,7 @@ export const AddViolationModal = ({
         violations={violations}
       />
     </>
-  );
+  ), document.body);
 };
 
 export default AddViolationModal;

@@ -149,16 +149,10 @@ Production: run `npm run build` and `npm run build:server`, then start the Node 
 ### Deploying to Vercel
 The Vercel configuration builds the Vite app into `dist` and routes `/api/*` requests to the Express function in `api/[...path].ts`; the remaining routes fall back to the SPA. In the Vercel project settings, add the server environment variables `DATABASE_URL` (a reachable hosted MySQL connection string) and `QR_HMAC_SECRET` (a private random secret). Set `FRONTEND_ORIGINS` for any custom domains; the deployment and project Vercel domains are allowed automatically. Keep `VITE_API_BASE_URL` empty so the browser calls the same-origin `/api` function. After changing environment variables, redeploy. A local `.env` file is not available to Vercel.
 
-### Optional grammar and spelling checks
-The summons notes and resolution summary can use LanguageTool when `VITE_LANGUAGETOOL_API_URL` points to a trusted server. The app checks English (US) text after a short pause and sends only the contents of the active notes field to that endpoint. Do not configure a public service for student or case information; use an institution-controlled server. Leave the setting empty to keep checking disabled.
+### Grammar and spelling checks
+The summons notes, resolution summaries, and other supported text fields send English (US) checks through the same-origin `/api/languagetool/check` endpoint. The API server proxies requests to the trusted LanguageTool service, so the browser does not need direct access to port 8010 or cross-origin permissions.
 
-For local Windows development, download the LanguageTool standalone server from the [official download page](https://languagetool.org/download/) and extract it into the ignored `LanguageTool/` folder. Start it from PowerShell:
-```powershell
-Set-Location .\LanguageTool
-java -Xms256m -Xmx1g -cp languagetool-server.jar org.languagetool.server.HTTPServer --port 8010 --allow-origin 'http://localhost:5173'
-```
-
-Set `VITE_LANGUAGETOOL_API_URL=http://localhost:8010/v2/check` in `.env`, then restart Vite so it reads the setting. Update the allowed origin to match the exact app origin. For deployment, use a trusted HTTPS endpoint and allow only the deployed app origin.
+For local Windows development, `npm run dev` starts the bundled LanguageTool service from `LanguageTool/` and reuses it if it is already running. If you start only the API and web servers, run `npm run languagetool:dev` in another terminal. For deployment, point the server-only `LANGUAGETOOL_API_URL` variable at an institution-controlled LanguageTool endpoint; do not send student or case information to a public service.
 
 ---
 

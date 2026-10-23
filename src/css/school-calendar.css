@@ -761,6 +761,45 @@
     height: 38px;
   }
 
+  .school-cal-categories-bar {
+    flex-wrap: wrap;
+    overflow: visible;
+    padding: 8px 14px;
+    gap: 6px;
+  }
+
+  .school-cal-cat-chip {
+    min-height: 30px;
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+
+  .school-cal-main-layout {
+    gap: 10px;
+  }
+
+  .school-cal-card {
+    padding: 8px;
+  }
+
+  .school-cal-weekdays {
+    margin-bottom: 5px;
+  }
+
+  .school-cal-weekday-label {
+    font-size: 10px;
+    padding: 3px 0;
+  }
+
+  .school-cal-grid {
+    gap: 4px;
+  }
+
+  .school-cal-day-cell,
+  .school-cal-day-empty {
+    height: 36px;
+  }
+
   .school-cal-add-form-grid {
     grid-template-columns: 1fr;
   }
@@ -828,7 +867,7 @@
 
 [data-theme="dark"] .school-cal-cat-chip.active {
   background: #1e293b !important;
-  border-color: #38bdf8 !important;
+  border-color: #737373 !important;
   color: #f8fafc !important;
 }
 
@@ -886,4 +925,3 @@
 [data-theme="dark"] .school-cal-event-desc {
   color: #cbd5e1 !important;
 }
-

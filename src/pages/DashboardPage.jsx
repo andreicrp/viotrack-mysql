@@ -22,7 +22,8 @@ import {
   TrendingDown,
   UsersRound,
   BarChart3,
-  Printer
+  Printer,
+  MessageSquare
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useAuth } from '../context/AuthContext';
@@ -97,6 +98,7 @@ const getRecordDateKey = (record) => {
 export const DashboardPage = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isTeacher = user?.role === 'teacher';
   const { success, info } = useNotification();
   const navigate = useNavigate();
 
@@ -197,9 +199,11 @@ export const DashboardPage = () => {
   // Helper: check if a record is officially approved (exclude under approval / rejected)
   const isApproved = (r) => {
     if (!r) return false;
-    if (r.approval_status === 'Under Approval' || r.status === 'Under Approval') return false;
-    if (r.approval_status === 'Rejected' || r.status === 'Rejected') return false;
-    return r.approval_status === 'Approved';
+    const approvalStatus = String(r.approval_status || r.approvalStatus || '').trim().toLowerCase();
+    const status = String(r.status || '').trim().toLowerCase();
+    if (approvalStatus === 'under approval' || status === 'under approval') return false;
+    if (approvalStatus === 'rejected' || status === 'rejected') return false;
+    return approvalStatus === 'approved' || approvalStatus === 'not required';
   };
 
   const approvedRecords = useMemo(() => {
@@ -655,12 +659,18 @@ export const DashboardPage = () => {
     }
 
     const topSection = sectionBreakdown.length > 0 && sectionBreakdown[0].count > 0 ? sectionBreakdown[0] : null;
-    const highRiskCount = repeatStudentsList.filter(s => s.badgeType === 'red').length;
+    const highRiskStudents = repeatStudentsList.filter(s => s.badgeType === 'red');
 
-    if (highRiskCount > 0) {
+    if (highRiskStudents.length > 0) {
+      const leadStudent = highRiskStudents[0];
+      const incidentSummary = `${leadStudent.name} has ${leadStudent.totalInfractions} logged incident${leadStudent.totalInfractions === 1 ? '' : 's'}${leadStudent.majorCount > 0 ? `, including ${leadStudent.majorCount} major violation${leadStudent.majorCount === 1 ? '' : 's'}` : ''}.`;
+      const otherStudentCount = highRiskStudents.length - 1;
+      const additionalStudents = otherStudentCount > 0
+        ? ` ${otherStudentCount} other student${otherStudentCount === 1 ? '' : 's'} also meet the high-risk threshold.`
+        : '';
       return {
-        title: 'Priority Guidance Alert',
-        text: `${highRiskCount} student${highRiskCount > 1 ? 's are' : ' is'} classified as High Risk due to multiple infractions or major offenses in this period. Recommended action: Coordinate counseling hearing with Class Advisers.`
+        title: 'High-risk students',
+        text: `${incidentSummary}${additionalStudents} Review the case history and follow up with the assigned adviser.`
       };
     }
 
@@ -1339,6 +1349,18 @@ export const DashboardPage = () => {
                 <QrCode size={18} />
                 <span>Scan QR</span>
               </button>
+
+              {isTeacher && (
+                <button
+                  type="button"
+                  className="dash-quick-action-btn"
+                  onClick={() => navigate('/case-discussion')}
+                  title="Review and manage your active student cases"
+                >
+                  <MessageSquare size={18} />
+                  <span>Active Cases</span>
+                </button>
+              )}
 
               <button
                 type="button"

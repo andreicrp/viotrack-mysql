@@ -985,6 +985,39 @@ html[data-theme="dark"] body .adviser-btn-remove:hover svg {
   stroke: #000000 !important;
 }
 
+/* Keep approval actions readable against their distinct dark-mode surfaces. */
+html[data-theme="dark"] body .for-approval-page .approval-mobile-card-actions button:first-child {
+  background: #171717 !important;
+  background-color: #171717 !important;
+  border-color: #404040 !important;
+  color: #f1f5f9 !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] body .for-approval-page .approval-mobile-card-actions button:nth-child(2) {
+  background: #047857 !important;
+  background-color: #047857 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html[data-theme="dark"] body .for-approval-page .approval-mobile-card-actions button:nth-child(3),
+html[data-theme="dark"] body .for-approval-page .approval-mobile-card-actions button:nth-child(4) {
+  background: #301416 !important;
+  background-color: #301416 !important;
+  border-color: #81343a !important;
+  color: #fecaca !important;
+  -webkit-text-fill-color: #fecaca !important;
+}
+
+html[data-theme="dark"] body .for-approval-page .approval-mobile-card-actions button svg,
+html[data-theme="dark"] body .for-approval-page .approval-mobile-card-actions button span {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  stroke: currentColor !important;
+}
+
 /* Keep mobile directory detail panels readable in dark mode at every responsive width. */
 html[data-theme="dark"] body .student-mobile-list-details,
 html[data-theme="dark"] body .teacher-mobile-list-details,

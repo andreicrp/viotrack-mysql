@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
   const inactivityTimerRef = useRef(null);
   const hardTimeoutTimerRef = useRef(null);
   const lastActiveThrottleRef = useRef(0);
+  const lastInteractionAtRef = useRef(Date.now());
 
   // Lock state persistence
   useEffect(() => {
@@ -135,6 +136,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (user && !isLocked) {
+      lastInteractionAtRef.current = Date.now();
       // Throttle updating timestamp to every 15 seconds to minimize storage writes
       const now = Date.now();
       if (now - lastActiveThrottleRef.current > 15000) {
@@ -147,6 +149,34 @@ export const AuthProvider = ({ children }) => {
         logout('expired');
       }, INACTIVITY_TIMEOUT_MS);
     }
+  }, [user, isLocked, logout]);
+
+  // Refresh the sliding server session while the user is actively working.
+  // This keeps an open, active page from outliving its server-side session.
+  useEffect(() => {
+    if (!user || isLocked) return undefined;
+
+    let mounted = true;
+    const refreshSession = async () => {
+      const recentlyActive = Date.now() - lastInteractionAtRef.current < INACTIVITY_TIMEOUT_MS;
+      if (!mounted || document.visibilityState === 'hidden' || !recentlyActive) return;
+
+      try {
+        await apiGet('/auth/session');
+      } catch (err) {
+        if (err.status === 401) {
+          logout('expired');
+        } else {
+          console.warn('Unable to refresh the active server session:', err);
+        }
+      }
+    };
+
+    const timer = setInterval(refreshSession, 5 * 60 * 1000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
   }, [user, isLocked, logout]);
 
   useEffect(() => {
@@ -180,6 +210,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
     sessionStorage.setItem(AUTH_ACTIVE_KEY, String(Date.now()));
+    lastInteractionAtRef.current = Date.now();
     setUser(userObj);
   };
 

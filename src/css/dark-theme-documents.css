@@ -10,6 +10,16 @@ html[data-theme="dark"] body .admin-users-mobile-cards .entity-grid-meta-seconda
   -webkit-text-fill-color: #f5f5f5 !important;
 }
 
+html[data-theme="dark"] body .admin-users-mobile-cards .admin-mobile-list-position {
+  color: #c7c7c7 !important;
+  -webkit-text-fill-color: #c7c7c7 !important;
+}
+
+html[data-theme="dark"] body .admin-users-mobile-pagination > span {
+  color: #a3a3a3 !important;
+  -webkit-text-fill-color: #a3a3a3 !important;
+}
+
 html[data-theme="dark"] body .admin-users-mobile-cards .admin-mobile-list-position,
 html[data-theme="dark"] body .admin-users-mobile-cards .entity-grid-meta-secondary {
   color: #c7c7c7 !important;
@@ -43,7 +53,7 @@ html[data-theme="dark"] body .approve-incident-dialog .modal-content-wrapper > d
   background: #0b0b0b !important;
 }
 
-html[data-theme="dark"] body .approve-incident-dialog .modal-content-wrapper span,
+html[data-theme="dark"] body .approve-incident-dialog .modal-content-wrapper span:not(.approve-incident-case-badge):not(.approve-incident-severity-badge):not(.approve-incident-offense-severity-badge),
 html[data-theme="dark"] body .approve-incident-dialog .modal-content-wrapper label,
 html[data-theme="dark"] body .approve-incident-dialog .modal-content-wrapper p,
 html[data-theme="dark"] body .approve-incident-dialog .modal-content-wrapper strong {
@@ -2078,8 +2088,8 @@ html[data-theme="dark"] body .approve-incident-dialog .approve-incident-severity
 }
 
 html[data-theme="dark"] body .violation-types-page .violation-catalog-detail-panel {
-  background: #0a0a0a !important;
-  border-color: #303030 !important;
+  background: transparent !important;
+  border-color: transparent !important;
 }
 
 html[data-theme="dark"] body .violation-types-page .violation-catalog-mobile-actions {

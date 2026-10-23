@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
+  padding: 28px 20px;
   box-sizing: border-box;
   animation: errorFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
@@ -22,8 +22,28 @@
   background: radial-gradient(circle at 50% 35%, #ffffff 0%, #edf3f8 100%);
   position: fixed;
   inset: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  touch-action: pan-y;
   z-index: 100;
+}
+
+/* Lock the document as well: global scrolling utilities can otherwise keep
+   html/body scrollable behind the fixed standalone error surface. */
+html:has(.error-page-container.standalone),
+body:has(.error-page-container.standalone) {
+  height: 100% !important;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.error-page-container.standalone .error-card {
+  max-height: none;
+}
+
+.error-page-container.standalone .error-illustration {
+  max-height: min(34dvh, 280px);
 }
 
 /* Subtle brand ambient accents for standalone view */
@@ -54,70 +74,40 @@
 /* Central Card */
 .error-card {
   background: #ffffff;
-  border-radius: 20px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 30px -5px rgba(7, 52, 95, 0.07), 0 2px 6px rgba(0, 0, 0, 0.02);
-  max-width: 560px;
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.09);
+  max-width: 660px;
   width: 100%;
-  padding: 40px 36px;
+  padding: 26px 32px;
   text-align: center;
   position: relative;
   z-index: 2;
   box-sizing: border-box;
-}
-
-/* Header Brand Top Bar */
-.error-brand-logo {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 24px;
 }
 
-.error-brand-logo img {
-  width: 28px;
-  height: 28px;
+.error-illustration {
+  display: block;
+  width: min(100%, 430px);
+  height: auto;
+  max-height: 280px;
   object-fit: contain;
+  margin: 0 auto 8px;
 }
 
-.error-brand-logo span {
-  font-size: 16px;
-  font-weight: 800;
-  color: #07345f;
-  letter-spacing: -0.02em;
-}
-
-/* Badge */
-.error-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 30px;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-bottom: 20px;
-}
-
-.error-badge.badge-404 {
-  background: #eff6ff;
-  color: #1e40af;
-  border: 1px solid #bfdbfe;
-}
-
-.error-badge.badge-403 {
-  background: #fff1f2;
-  color: #be123c;
-  border: 1px solid #fecdd3;
-}
-
-.error-badge.badge-500 {
-  background: #fffbeb;
-  color: #b45309;
-  border: 1px solid #fde68a;
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 /* High-Polish Multi-Layered Icon Containers */
@@ -216,7 +206,8 @@
   font-size: 13.5px;
   color: #64748b;
   line-height: 1.6;
-  margin: 0 0 24px 0;
+  max-width: 480px;
+  margin: 0 0 20px 0;
 }
 
 /* Actions Group */
@@ -226,6 +217,7 @@
   justify-content: center;
   flex-wrap: wrap;
   margin-bottom: 22px;
+  width: 100%;
 }
 
 .error-btn-primary {
@@ -280,6 +272,8 @@
   padding-top: 18px;
   margin-top: 18px;
   text-align: left;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .error-quick-title {
@@ -372,8 +366,20 @@
 }
 
 @media (max-width: 640px) {
+  .error-page-container {
+    min-height: 70vh;
+    padding: 20px 12px;
+  }
+
   .error-card {
-    padding: 28px 18px;
+    max-width: 520px;
+    padding: 22px 18px;
+    border-radius: 18px;
+  }
+
+  .error-illustration {
+    width: min(100%, 340px);
+    max-height: 230px;
   }
   
   .error-big-code {
@@ -382,6 +388,11 @@
   
   .error-title {
     font-size: 18px;
+  }
+
+  .error-description {
+    font-size: 13px;
+    margin-bottom: 18px;
   }
   
   .error-links-grid {
@@ -396,6 +407,36 @@
   .error-btn-secondary {
     width: 100%;
     justify-content: center;
+  }
+
+  .error-page-container.standalone {
+    padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px));
+    align-items: center;
+  }
+
+  .error-page-container.standalone .error-card {
+    padding: 20px 16px;
+  }
+
+  .error-page-container.standalone .error-illustration {
+    max-height: min(28dvh, 190px);
+    margin-bottom: 8px;
+  }
+
+  .error-actions {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .error-btn-primary,
+  .error-btn-secondary {
+    min-height: 42px;
+    box-sizing: border-box;
+  }
+
+  .error-quick-links {
+    margin-top: 10px;
+    padding-top: 12px;
   }
 }
 
@@ -420,8 +461,8 @@
 
   :root[data-theme="dark"] .error-card {
     background: #0d0d0d;
-    border-color: #2b2b2b;
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.32), 0 2px 8px rgba(0, 0, 0, 0.2);
+    border-color: #303030;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
   }
 
   :root[data-theme="dark"] .error-preview-stage {
@@ -555,28 +596,6 @@
 
   :root[data-theme="dark"] .error-test-page .error-audit-check.is-failed .error-audit-check-status {
     color: #f87171 !important;
-  }
-
-  :root[data-theme="dark"] .error-brand-logo span {
-    color: #f1f5f9;
-  }
-
-  :root[data-theme="dark"] .error-badge.badge-404 {
-    background: rgba(30, 64, 175, 0.22);
-    color: #bfdbfe;
-    border-color: rgba(96, 165, 250, 0.42);
-  }
-
-  :root[data-theme="dark"] .error-badge.badge-403 {
-    background: rgba(159, 18, 57, 0.22);
-    color: #fecdd3;
-    border-color: rgba(251, 113, 133, 0.42);
-  }
-
-  :root[data-theme="dark"] .error-badge.badge-500 {
-    background: rgba(146, 64, 14, 0.24);
-    color: #fde68a;
-    border-color: rgba(251, 191, 36, 0.42);
   }
 
   :root[data-theme="dark"] .error-big-code.code-404 {

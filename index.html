@@ -16,6 +16,11 @@
     <meta name="keywords" content="Viotrack, student violation tracking, QR code dashboard, student conduct management, school disciplinary system, QR scanner" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <style>
+      /* Keep the keyboard skip link hidden before the application stylesheet loads. */
+      .skip-to-content { position: fixed; top: -72px; left: 20px; }
+      .skip-to-content:focus { top: 16px; }
+    </style>
 
     <!-- Open Graph (Facebook, Discord, LinkedIn, Slack, WhatsApp) -->
     <meta property="og:type" content="website" />
@@ -38,7 +43,7 @@
 
   </head>
   <body>
-    <a href="#main-content" class="skip-to-content" style="position: absolute; top: -100px; left: 16px; background: #07345f; color: #ffffff; padding: 8px 16px; border-radius: 6px; z-index: 9999; font-weight: 700; text-decoration: none; transition: top 0.2s ease;">
+    <a href="#main-content" class="skip-to-content">
       Skip to main content
     </a>
     <div id="root"></div>

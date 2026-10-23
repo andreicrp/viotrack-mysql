@@ -357,7 +357,7 @@ export const AdminDashboardPage = () => {
 
       <section className="admin-dashboard-metrics" aria-label="School overview">
         {summaryCards.map(({ label, value, icon: Icon, href, tone }) => (
-          <Link className="admin-dashboard-metric" to={href} key={label}>
+          <Link className={`admin-dashboard-metric${tone === 'amber' ? ' is-attention' : ''}`} to={href} key={label}>
             <span className={`admin-dashboard-metric-icon ${tone}`}><Icon size={18} /></span>
             <span className="admin-dashboard-metric-copy">
               <span>{label}</span>

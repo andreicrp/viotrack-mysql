@@ -7,6 +7,7 @@
 const prefetchMap = {
   '/dashboard': () => import('../pages/DashboardPage'),
   '/violations': () => import('../pages/ViolationsPage'),
+  '/case-discussion': () => import('../pages/CaseDiscussionPage'),
   '/violation-types': () => import('../pages/ViolationTypesPage'),
   '/students': () => import('../pages/StudentsPage'),
   '/my-class': () => import('../pages/MyClassPage'),
@@ -18,6 +19,7 @@ const prefetchMap = {
   '/admin-users': () => import('../pages/AdminUsersPage'),
   '/for-approval': () => import('../pages/ForApprovalPage'),
   '/activity-logs': () => import('../pages/ActivityLogsPage'),
+  '/closed-case-chats': () => import('../pages/ClosedCaseChatsPage'),
   '/profile': () => import('../pages/ProfilePage'),
 };
 

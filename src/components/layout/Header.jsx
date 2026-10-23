@@ -28,12 +28,24 @@ export const Header = ({ onToggleSidebar, onOpenCommandPalette }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [currentTime, setCurrentTime] = useState(() => new Date());
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
 
   const isAdmin = user?.role === 'admin';
+  const userImage = user?.avatar || user?.image || '';
+  const userInitials = String(user?.name || 'User')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase();
+
+  useEffect(() => setAvatarLoadFailed(false), [userImage]);
 
   // Live 24-hour clock timer
   useEffect(() => {
@@ -413,12 +425,17 @@ export const Header = ({ onToggleSidebar, onOpenCommandPalette }) => {
             draggable={false}
           >
             <div className="header-avatar-ring" draggable={false}>
-              <img
-                src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
-                alt={user?.name || 'User'}
-                className="header-avatar-img"
-                draggable={false}
-              />
+              {userImage && !avatarLoadFailed ? (
+                <img
+                  src={userImage}
+                  alt={user?.name || 'User'}
+                  className="header-avatar-img"
+                  onError={() => setAvatarLoadFailed(true)}
+                  draggable={false}
+                />
+              ) : (
+                <span className="header-avatar-fallback" aria-hidden="true">{userInitials}</span>
+              )}
               <span className="header-online-dot" />
             </div>
           </button>
@@ -426,12 +443,17 @@ export const Header = ({ onToggleSidebar, onOpenCommandPalette }) => {
           {showDropdown && (
             <div className="header-user-dropdown" role="menu" draggable={false}>
               <div className="user-dropdown-header" draggable={false}>
-                <img
-                  src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
-                  alt={user?.name || 'User'}
-                  className="user-dropdown-avatar"
-                  draggable={false}
-                />
+                {userImage && !avatarLoadFailed ? (
+                  <img
+                    src={userImage}
+                    alt={user?.name || 'User'}
+                    className="user-dropdown-avatar"
+                    onError={() => setAvatarLoadFailed(true)}
+                    draggable={false}
+                  />
+                ) : (
+                  <span className="user-dropdown-avatar user-dropdown-avatar-fallback" aria-hidden="true">{userInitials}</span>
+                )}
                 <div className="user-dropdown-meta" draggable={false}>
                   <div className="user-dropdown-name" draggable={false}>{user?.name || 'Sheryl Gamboa'}</div>
                   <span className="user-dropdown-role-chip" draggable={false}>

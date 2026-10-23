@@ -1642,9 +1642,9 @@ div[id*="reader"] video {
 .student-scan-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.72);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1701,13 +1701,13 @@ div[id*="reader"] video {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: #f1f5f9;
+  color: #334155;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid #dbeafe;
+  border: 1px solid #e2e8f0;
 }
 
 .student-scan-modal-title {
@@ -1781,8 +1781,8 @@ div[id*="reader"] video {
   height: 52px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #07345f;
-  box-shadow: 0 3px 10px rgba(7, 52, 95, 0.15);
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1);
   display: block;
 }
 
@@ -1793,13 +1793,13 @@ div[id*="reader"] video {
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  background: #16a34a;
+  background: #334155;
   color: #ffffff;
   border: 2px solid #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(22, 163, 74, 0.35);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
 }
 
 .verified-meta {
@@ -1841,7 +1841,7 @@ div[id*="reader"] video {
 
 .verified-section-tag {
   font-weight: 700;
-  color: #2563eb;
+  color: #334155;
 }
 
 .verified-dot {
@@ -1893,22 +1893,22 @@ div[id*="reader"] video {
 .guardian-strip-phone {
   margin-left: auto;
   font-size: 11px;
-  color: #2563eb;
+  color: #334155;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   text-decoration: none;
   font-weight: 700;
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   padding: 1px 6px;
   border-radius: 5px;
   transition: all 0.12s ease;
 }
 
 .guardian-strip-phone:hover {
-  background: #2563eb;
-  color: #ffffff;
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 /* Status Flag Pill */
@@ -1969,16 +1969,10 @@ div[id*="reader"] video {
   line-height: 1.1;
 }
 
-.stat-strip-item.danger .stat-strip-num {
-  color: #dc2626;
-}
-
-.stat-strip-item.warning .stat-strip-num {
-  color: #a16207;
-}
-
+.stat-strip-item.danger .stat-strip-num,
+.stat-strip-item.warning .stat-strip-num,
 .stat-strip-item.success .stat-strip-num {
-  color: #15803d;
+  color: #07345f;
 }
 
 .stat-strip-label {
@@ -3051,6 +3045,49 @@ div[id*="reader"] video {
 
   .verified-btn.tertiary {
     min-height: 42px;
+    padding: 9px 10px;
+  }
+}
+
+/* Keep the scanner feedback popover within the viewport on tablet and phone widths. */
+@media (max-width: 1100px) {
+  .feedback-settings-popover {
+    left: auto;
+    right: 0;
+    width: min(300px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    max-height: min(70vh, 560px);
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .feedback-popover-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .feedback-settings-popover {
+    left: 0;
+    right: auto;
+    width: min(300px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+    max-height: min(70dvh, 560px);
+  }
+
+  .feedback-popover-title {
+    font-size: 12.5px;
+  }
+
+  .feedback-popover-tag {
+    font-size: 10px;
+    white-space: normal;
+  }
+
+  .feedback-test-btn {
+    min-height: 40px;
     padding: 9px 10px;
   }
 }

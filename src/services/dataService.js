@@ -2,7 +2,8 @@ import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api';
 import { smsService } from './smsService';
 import { broadcastRecordChange, startMutation, endMutation, subscribeCrossTabSync } from '../utils/dataIntegrity';
 import { validateBackupPayload } from '../utils/backupValidation';
-import { getStudentPhoto } from '../utils/studentPhoto';
+import { getAdminProfilePhoto, getStudentPhoto } from '../utils/studentPhoto';
+import { getGeneratedStudentAvatar } from '../../shared/studentAvatar.ts';
 
 // Clean live data fallbacks
 import INITIAL_VIOLATIONS from '../data/violations.json';
@@ -82,7 +83,7 @@ const INITIAL_ADMINS = [
     email: 'admin@phcmanila.edu.ph',
     role: 'Head Admin',
     position: 'Head of Student Affairs',
-    image: '/images/phcm-logo2.png'
+    image: ''
   },
   {
     id: 2,
@@ -382,7 +383,7 @@ export const dataService = {
             ...localItem,
             ...remoteItem,
             student_id: sid,
-            image: getStudentPhoto(remoteItem.image)
+            image: getStudentPhoto(remoteItem.image) || getGeneratedStudentAvatar({ ...localItem, ...remoteItem, student_id: sid })
           };
         });
 
@@ -406,7 +407,7 @@ export const dataService = {
         return {
           ...s,
             student_id: sid,
-          image: getStudentPhoto(s.image)
+          image: getStudentPhoto(s.image) || getGeneratedStudentAvatar(s)
         };
       });
 
@@ -415,6 +416,41 @@ export const dataService = {
       _cache.timestamps.students = Date.now();
       return processed;
     });
+  },
+
+  async getStudentsForReporting() {
+    const normalizeStudents = (rows) => (Array.isArray(rows) ? rows : []).map(student => ({
+      ...student,
+      id: student.id ?? student.studentDbId,
+      student_id: String(student.student_id ?? student.studentId ?? '').trim(),
+      parent_contact: student.parent_contact ?? student.parentContact ?? '',
+      parent_name: student.parent_name ?? student.parentName ?? '',
+      academicyear: student.academicyear ?? student.academicYear ?? '',
+      image: getStudentPhoto(student.image) || getGeneratedStudentAvatar(student)
+    }));
+
+    let reportingError;
+    try {
+      const reportingList = await apiGet('/students?purpose=report');
+      if (Array.isArray(reportingList) && reportingList.length > 0) {
+        return normalizeStudents(reportingList);
+      }
+    } catch (error) {
+      reportingError = error;
+    }
+
+    // Older API deployments may not support the reporting-roster query.
+    // Fall back to the normal roster, which still returns the teacher's
+    // assigned students and prevents a blank picker when that endpoint works.
+    try {
+      const roster = await this.getStudents(true);
+      if (roster.length > 0) return normalizeStudents(roster);
+    } catch (fallbackError) {
+      if (!reportingError) throw fallbackError;
+    }
+
+    if (reportingError) throw reportingError;
+    return [];
   },
 
   async addStudent(student) {
@@ -442,7 +478,7 @@ export const dataService = {
         parent_name: String(student.parent_name || '').trim(),
         parent_contact: String(student.parent_contact || '').trim(),
         address: String(student.address || '').trim(),
-        image: getStudentPhoto(student.image)
+        image: getStudentPhoto(student.image) || getGeneratedStudentAvatar({ ...student, student_id: studentIdVal })
       };
 
       {
@@ -522,7 +558,7 @@ export const dataService = {
           parent_name: String(student.parent_name || '').trim(),
           parent_contact: String(student.parent_contact || '').trim(),
           address: String(student.address || '').trim(),
-          image: ''
+          image: getStudentPhoto(student.image) || getGeneratedStudentAvatar({ ...student, student_id: studentIdVal })
         };
       });
 
@@ -850,24 +886,26 @@ export const dataService = {
       }
 
       let mappedRecords = allRawRecords.map(r => {
-        const isTeacher = (r.reported_by_type === 'teacher' || (r.reported_by_name && r.reported_by_name !== 'System Admin' && r.reported_by_name !== 'Sheryl Gamboa' && r.reported_by_name !== 'Head Admin'));
+        const isTeacher = r.reported_by_type === 'teacher';
         
         let resolvedApproval = r.approval_status;
-        if (r.status === 'Under Approval') {
+        if (resolvedApproval === 'Under Approval' || (!isTeacher && r.status === 'Under Approval' && resolvedApproval === 'Not Required')) {
           resolvedApproval = 'Under Approval';
         } else if (r.status === 'Rejected') {
           resolvedApproval = 'Rejected';
-        } else if (resolvedApproval === 'Under Approval') {
-          resolvedApproval = 'Under Approval';
         } else if (resolvedApproval === 'Rejected') {
           resolvedApproval = 'Rejected';
+        } else if (resolvedApproval === 'Approved') {
+          resolvedApproval = 'Approved';
+        } else if (isTeacher && r.status === 'Under Approval') {
+          resolvedApproval = 'Under Approval';
         } else if (!resolvedApproval) {
           if (r.approved_by) {
             resolvedApproval = 'Approved';
-          } else if (isTeacher || !r.approved_by) {
+          } else if (isTeacher) {
             resolvedApproval = 'Under Approval';
           } else {
-            resolvedApproval = 'Approved';
+            resolvedApproval = 'Not Required';
           }
         }
 
@@ -883,9 +921,7 @@ export const dataService = {
         }
 
         const sid = String(resolvedStudent.student_id || r.student_id || '109283746101').trim();
-        const sImage = (resolvedStudent.image && resolvedStudent.image.trim() !== '')
-          ? resolvedStudent.image
-          : `https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80`;
+        const sImage = getStudentPhoto(resolvedStudent.image) || getGeneratedStudentAvatar(resolvedStudent);
 
         resolvedStudent = {
           ...resolvedStudent,
@@ -932,7 +968,7 @@ export const dataService = {
 
       const studentIdValue = record.student_id_value;
       if (studentIdValue) {
-        const students = await apiGet('/students');
+        const students = await apiGet('/students?purpose=report');
         const matchedStudent = students.find(student =>
           String(student.id) === String(databaseStudentId) ||
           String(student.student_id) === String(studentIdValue)
@@ -1109,10 +1145,15 @@ export const dataService = {
         ? remoteList.map(r => {
             return {
               ...r,
+              image: getAdminProfilePhoto(r.image),
+              twoFactorEnabled: Boolean(r.two_factor_enabled ?? r.twoFactorEnabled),
               password: undefined
             };
           })
-        : localList;
+        : localList.map(admin => ({
+            ...admin,
+            image: getAdminProfilePhoto(admin.image)
+          }));
 
       _cache.data.teachers = list;
       _cache.timestamps.teachers = Date.now();
@@ -1385,6 +1426,7 @@ export const dataService = {
         ? remoteList.map(r => {
             return {
               ...r,
+              twoFactorEnabled: Boolean(r.two_factor_enabled ?? r.twoFactorEnabled),
               password: undefined
             };
           })
@@ -1407,7 +1449,7 @@ export const dataService = {
         role: String(admin.role || 'Head Admin').trim(),
         position: String(admin.position || 'Discipline Staff').trim(),
         contact: String(admin.contact || '').trim(),
-        image: getStudentPhoto(admin.image)
+        image: getAdminProfilePhoto(admin.image)
       };
       const result = await apiPost('/admins', {
         ...cleanAdmin,
@@ -1454,6 +1496,18 @@ export const dataService = {
       }
       await this.addActivityLog('Update Admin', `Updated admin profile for ${updates.fname || ''} ${updates.lname || ''} (${updates.role || 'Admin'})`);
       broadcastRecordChange('update', 'admin', result);
+      return result;
+    } finally {
+      endMutation();
+    }
+  },
+
+  async removeAdminTwoFactor(id) {
+    startMutation();
+    try {
+      const result = await apiDelete(`/admins/${encodeURIComponent(id)}/two-factor`);
+      invalidateCache('admins');
+      broadcastRecordChange('update', 'admin', { id, twoFactorEnabled: false });
       return result;
     } finally {
       endMutation();
@@ -1663,7 +1717,7 @@ export const dataService = {
         this.getSchoolEvents()
       ]);
 
-      const approvedRecords = (records || []).filter(r => r.approval_status === 'Approved');
+      const approvedRecords = (records || []).filter(r => ['Approved', 'Not Required'].includes(r.approval_status));
       const underApprovalCount = (records || []).filter(r => r.approval_status === 'Under Approval' || r.status === 'Under Approval').length;
       const pendingCount = approvedRecords.filter(r => r.status === 'Pending').length;
       const resolvedCount = approvedRecords.filter(r => r.status === 'Resolved').length;

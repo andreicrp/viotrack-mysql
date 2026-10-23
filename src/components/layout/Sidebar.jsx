@@ -10,6 +10,7 @@ import {
   Settings,
   UserCircle2,
   Bell,
+  MessageSquare,
   LogOut,
   ChevronDown,
   X
@@ -22,25 +23,40 @@ export const Sidebar = ({ isCollapsed, isMobileOpen, onCloseMobile }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const userImage = user?.avatar || user?.image || '';
+  const userInitials = String(user?.name || 'User')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase();
 
   const [managementOpen, setManagementOpen] = useState(true);
   const [adminOpen, setAdminOpen] = useState(false);
   const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+
+  useEffect(() => setAvatarLoadFailed(false), [userImage]);
 
   const isAdmin = user?.role === 'admin';
   const isTeacher = user?.role === 'teacher';
+  const caseDiscussionLabel = isTeacher ? 'Active Cases' : 'Case Discussion';
 
   const isManagementActive = location.pathname.includes('/violations') || location.pathname.includes('/violation-types');
-  const isAdminActive = location.pathname.includes('/admin-dashboard') || location.pathname.includes('/admin-users') || location.pathname.includes('/for-approval') || location.pathname.includes('/activity-logs');
+  const isAdminActive = location.pathname.includes('/admin-dashboard') || location.pathname.includes('/admin-users') || location.pathname.includes('/for-approval') || location.pathname.includes('/activity-logs') || location.pathname.includes('/closed-case-chats');
 
   useEffect(() => {
     const updateCount = async () => {
       try {
         const records = await dataService.getRecords();
-        const pending = (records || []).filter(r => 
-          r.approval_status === 'Under Approval' || 
-          (r.reported_by_type === 'teacher' && r.status === 'Under Approval')
-        ).length;
+        const pending = (records || []).filter((r) => {
+          const approvalStatus = String(r.approval_status || '').trim();
+          if (approvalStatus === 'Approved' || approvalStatus === 'Rejected' || approvalStatus === 'Not Required') return false;
+          if (approvalStatus === 'Under Approval') return true;
+          return r.status === 'Under Approval' && r.reported_by_type === 'teacher';
+        }).length;
         setPendingApprovalsCount(pending);
       } catch {}
     };
@@ -101,11 +117,16 @@ export const Sidebar = ({ isCollapsed, isMobileOpen, onCloseMobile }) => {
         <div className="mobile-drawer-header">
           <div className="mobile-drawer-user-info">
             <div className="mobile-drawer-avatar-wrap">
-              <img
-                src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
-                alt={user?.name || 'User'}
-                className="mobile-drawer-avatar"
-              />
+              {userImage && !avatarLoadFailed ? (
+                <img
+                  src={userImage}
+                  alt={user?.name || 'User'}
+                  className="mobile-drawer-avatar"
+                  onError={() => setAvatarLoadFailed(true)}
+                />
+              ) : (
+                <span className="mobile-drawer-avatar mobile-drawer-avatar-fallback" aria-hidden="true">{userInitials}</span>
+              )}
               <span className="mobile-online-indicator" />
             </div>
             <div className="mobile-drawer-user-meta">
@@ -190,6 +211,15 @@ export const Sidebar = ({ isCollapsed, isMobileOpen, onCloseMobile }) => {
                 </ul>
               </li>
 
+              <li className={`nav-item ${location.pathname === '/case-discussion' ? 'active' : ''}`} data-title={caseDiscussionLabel}>
+                <NavLink to="/case-discussion" className="nav-link" onClick={handleLinkClick} onMouseEnter={() => preloadRoute('/case-discussion')}>
+                  <span className="sidebar-icon">
+                    <MessageSquare size={20} strokeWidth={2} />
+                  </span>
+                  <span className="nav-text">{caseDiscussionLabel}</span>
+                </NavLink>
+              </li>
+
               {isTeacher && (
                 <li className={`nav-item ${location.pathname === '/my-class' ? 'active' : ''}`} data-title="My Class">
                   <NavLink to="/my-class" className="nav-link" onClick={handleLinkClick} onMouseEnter={() => preloadRoute('/my-class')}>
@@ -244,6 +274,7 @@ export const Sidebar = ({ isCollapsed, isMobileOpen, onCloseMobile }) => {
                       preloadRoute('/admin-users');
                       preloadRoute('/for-approval');
                       preloadRoute('/activity-logs');
+                      preloadRoute('/closed-case-chats');
                     }}
                     onClick={(e) => {
                       e.preventDefault();
@@ -291,6 +322,12 @@ export const Sidebar = ({ isCollapsed, isMobileOpen, onCloseMobile }) => {
                       <NavLink to="/activity-logs" className="submenu-link" onClick={handleLinkClick} onMouseEnter={() => preloadRoute('/activity-logs')}>
                         <span className="submenu-bullet"></span>
                         <span className="submenu-text">Activity</span>
+                      </NavLink>
+                    </li>
+                    <li className={`submenu-item ${location.pathname === '/closed-case-chats' ? 'active' : ''}`}>
+                      <NavLink to="/closed-case-chats" className="submenu-link" onClick={handleLinkClick} onMouseEnter={() => preloadRoute('/closed-case-chats')}>
+                        <span className="submenu-bullet"></span>
+                        <span className="submenu-text">Closed Chats</span>
                       </NavLink>
                     </li>
                   </ul>

@@ -77,7 +77,7 @@ export const MyClassPage = () => {
         if (!r) return false;
         if (r.approval_status === 'Under Approval' || r.status === 'Under Approval') return false;
         if (r.approval_status === 'Rejected' || r.status === 'Rejected') return false;
-        return r.approval_status === 'Approved';
+        return r.approval_status === 'Approved' || r.approval_status === 'Not Required';
       };
 
       setRecords((allRecords || []).filter(isApproved));
@@ -346,19 +346,12 @@ export const MyClassPage = () => {
             <button
               onClick={() => handleOpenExportSaveAs('csv')}
               className="page-banner-btn-secondary"
-              title="Save As CSV / Excel roster"
+              title="Export class roster as CSV, Excel, or PDF"
             >
-              <FileText size={14} strokeWidth={2.2} /> Export CSV
+              <FileText size={14} strokeWidth={2.2} /> Export
             </button>
           </div>
 
-          <button
-            onClick={() => handleOpenExportSaveAs('pdf')}
-            className="page-banner-primary-btn"
-            title="Save As formatted PDF class roster"
-          >
-            <Upload size={14} strokeWidth={2.2} /> Export Roster (PDF)
-          </button>
         </div>
       </div>
 

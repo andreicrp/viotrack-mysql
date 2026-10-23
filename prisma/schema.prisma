@@ -1,35 +1,35 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "./generated/prisma"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 model Student {
-  id             BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
-  studentId      String            @unique @map("student_id") @db.VarChar(50)
-  fname          String            @db.VarChar(100)
-  mname          String            @default("") @db.VarChar(100)
-  lname          String            @db.VarChar(100)
-  email          String            @default("") @db.VarChar(150)
-  grade          String            @db.VarChar(20)
-  section        String            @db.VarChar(50)
-  academicYear   String            @default("2025-2026") @map("academicyear") @db.VarChar(20)
-  gender         String            @default("Male") @db.VarChar(10)
-  contact        String            @default("") @db.VarChar(30)
-  parentName     String            @default("") @map("parent_name") @db.VarChar(150)
-  parentContact  String            @default("") @map("parent_contact") @db.VarChar(30)
-  address        String?           @db.Text
-  image          String?           @db.LongText
-  track          String            @default("JHS") @db.VarChar(50)
-  strand         String            @default("JHS") @db.VarChar(100)
-  createdAt      DateTime          @default(now()) @map("created_at") @db.DateTime(0)
-  records        Record[]
-  locations      StudentLocation[]
-  meetings       Meeting[]
-  smsLogs        SmsLog[]
+  id            BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  studentId     String            @unique @map("student_id") @db.VarChar(50)
+  fname         String            @db.VarChar(100)
+  mname         String            @default("") @db.VarChar(100)
+  lname         String            @db.VarChar(100)
+  email         String            @default("") @db.VarChar(150)
+  grade         String            @db.VarChar(20)
+  section       String            @db.VarChar(50)
+  academicYear  String            @default("2025-2026") @map("academicyear") @db.VarChar(20)
+  gender        String            @default("Male") @db.VarChar(10)
+  contact       String            @default("") @db.VarChar(30)
+  parentName    String            @default("") @map("parent_name") @db.VarChar(150)
+  parentContact String            @default("") @map("parent_contact") @db.VarChar(30)
+  address       String?           @db.Text
+  image         String?           @db.LongText
+  track         String            @default("JHS") @db.VarChar(50)
+  strand        String            @default("JHS") @db.VarChar(100)
+  createdAt     DateTime          @default(now()) @map("created_at") @db.DateTime(0)
+  records       Record[]
+  locations     StudentLocation[]
+  meetings      Meeting[]
+  smsLogs       SmsLog[]
 
   @@index([grade, section])
   @@index([lname, fname])
@@ -37,94 +37,139 @@ model Student {
 }
 
 model Admin {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  fname      String   @db.VarChar(100)
-  mname      String   @default("") @db.VarChar(100)
-  lname      String   @db.VarChar(100)
-  email      String   @unique @db.VarChar(150)
-  password   String   @map("password_hash") @db.VarChar(255)
-  role       String   @default("admin") @db.VarChar(50)
-  position   String   @default("Discipline Staff") @db.VarChar(100)
-  contact    String   @default("") @db.VarChar(30)
-  image      String?  @db.LongText
-  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  fname     String   @db.VarChar(100)
+  mname     String   @default("") @db.VarChar(100)
+  lname     String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(150)
+  password  String   @map("password_hash") @db.VarChar(255)
+  role      String   @default("admin") @db.VarChar(50)
+  position  String   @default("Discipline Staff") @db.VarChar(100)
+  contact   String   @default("") @db.VarChar(30)
+  image     String?  @db.LongText
+  twoFactorEnabled Boolean @default(false) @map("two_factor_enabled")
+  twoFactorSecret  String? @map("two_factor_secret") @db.VarChar(512)
+  twoFactorRecoveryCodes String? @map("two_factor_recovery_codes") @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
   @@map("admins")
 }
 
 model Teacher {
-  id          BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
-  fname       String     @db.VarChar(100)
-  mname       String     @default("") @db.VarChar(100)
-  lname       String     @db.VarChar(100)
-  email       String     @unique @db.VarChar(150)
-  password    String     @map("password_hash") @db.VarChar(255)
-  position    String     @default("Teacher I") @db.VarChar(100)
-  department  String     @default("Junior High School") @db.VarChar(100)
-  specialization String  @default("") @db.VarChar(150)
-  contact     String     @default("") @db.VarChar(30)
-  gender      String     @default("Male") @db.VarChar(10)
-  image       String?    @db.LongText
-  createdAt   DateTime   @default(now()) @map("created_at") @db.DateTime(0)
-  advisers    Adviser[]
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  fname          String    @db.VarChar(100)
+  mname          String    @default("") @db.VarChar(100)
+  lname          String    @db.VarChar(100)
+  email          String    @unique @db.VarChar(150)
+  password       String    @map("password_hash") @db.VarChar(255)
+  position       String    @default("Teacher I") @db.VarChar(100)
+  department     String    @default("Junior High School") @db.VarChar(100)
+  specialization String    @default("") @db.VarChar(150)
+  contact        String    @default("") @db.VarChar(30)
+  gender         String    @default("Male") @db.VarChar(10)
+  image          String?   @db.LongText
+  twoFactorEnabled Boolean  @default(false) @map("two_factor_enabled")
+  twoFactorSecret  String?  @map("two_factor_secret") @db.VarChar(512)
+  twoFactorRecoveryCodes String? @map("two_factor_recovery_codes") @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  advisers       Adviser[]
+
   @@map("teachers")
 }
 
 model Adviser {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  teacherId  BigInt   @map("teacher_id") @db.UnsignedBigInt
-  gradeLevel String   @map("grade_level") @db.VarChar(20)
-  classSection String @map("class_section") @db.VarChar(50)
-  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  teacher    Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  teacherId    BigInt   @map("teacher_id") @db.UnsignedBigInt
+  gradeLevel   String   @map("grade_level") @db.VarChar(20)
+  classSection String   @map("class_section") @db.VarChar(50)
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  teacher      Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@unique([gradeLevel, classSection])
   @@map("advisers")
 }
 
 model Violation {
-  id             BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  title          String   @db.VarChar(150)
-  description    String?  @db.Text
-  type           String   @default("Minor") @db.VarChar(30)
-  severity       String?  @default("Minor") @db.VarChar(30)
-  defaultSanction String? @map("default_sanction") @db.Text
-  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  records        Record[]
+  id              BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  title           String   @db.VarChar(150)
+  description     String?  @db.Text
+  type            String   @default("Minor") @db.VarChar(30)
+  severity        String?  @default("Minor") @db.VarChar(30)
+  defaultSanction String?  @map("default_sanction") @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  records         Record[]
 
   @@index([type])
   @@map("violations")
 }
 
 model Record {
-  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  studentId        BigInt    @map("student_id") @db.UnsignedBigInt
-  violationId      BigInt?   @map("violation_id") @db.UnsignedBigInt
-  reportedById     BigInt?   @map("reported_by_id") @db.UnsignedBigInt
-  reportedByType   String?   @default("admin") @map("reported_by_type") @db.VarChar(20)
-  reportedByName   String?   @map("reported_by_name") @db.VarChar(150)
-  dateReported     DateTime  @default(now()) @map("date_reported") @db.DateTime(0)
-  status           String    @default("Pending") @db.VarChar(30)
-  approvalStatus   String    @default("Approved") @map("approval_status") @db.VarChar(30)
-  approvedBy       String?   @map("approved_by") @db.VarChar(150)
-  approvedAt       DateTime? @map("approved_at") @db.DateTime(0)
-  rejectedBy       String?   @map("rejected_by") @db.VarChar(150)
-  rejectedAt       DateTime? @map("rejected_at") @db.DateTime(0)
-  rejectionReason  String?   @map("rejection_reason") @db.Text
-  sanction         String?   @db.Text
-  remarks          String?   @db.Text
-  resolutionNotes  String?   @map("resolution_notes") @db.Text
-  resolutionDate   DateTime? @map("resolution_date") @db.DateTime(0)
-  smsNotified      Boolean   @default(false) @map("sms_notified")
-  createdAt        DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  student          Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  violation        Violation? @relation(fields: [violationId], references: [id], onDelete: SetNull)
-  meetings         Meeting[]
-  smsLogs          SmsLog[]
+  id              BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  studentId       BigInt      @map("student_id") @db.UnsignedBigInt
+  violationId     BigInt?     @map("violation_id") @db.UnsignedBigInt
+  reportedById    BigInt?     @map("reported_by_id") @db.UnsignedBigInt
+  reportedByType  String?     @default("admin") @map("reported_by_type") @db.VarChar(20)
+  reportedByName  String?     @map("reported_by_name") @db.VarChar(150)
+  dateReported    DateTime    @default(now()) @map("date_reported") @db.DateTime(0)
+  status          String      @default("Pending") @db.VarChar(30)
+  approvalStatus  String      @default("Not Required") @map("approval_status") @db.VarChar(30)
+  approvedBy      String?     @map("approved_by") @db.VarChar(150)
+  approvedAt      DateTime?   @map("approved_at") @db.DateTime(0)
+  rejectedBy      String?     @map("rejected_by") @db.VarChar(150)
+  rejectedAt      DateTime?   @map("rejected_at") @db.DateTime(0)
+  rejectionReason String?     @map("rejection_reason") @db.Text
+  sanction        String?     @db.Text
+  remarks         String?     @db.Text
+  resolutionNotes String?     @map("resolution_notes") @db.Text
+  resolutionDate  DateTime?   @map("resolution_date") @db.DateTime(0)
+  smsNotified     Boolean     @default(false) @map("sms_notified")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.DateTime(0)
+  student         Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  violation       Violation?  @relation(fields: [violationId], references: [id], onDelete: SetNull)
+  meetings        Meeting[]
+  smsLogs         SmsLog[]
+  caseThread      CaseThread?
 
   @@index([status])
   @@index([approvalStatus])
   @@index([dateReported])
   @@map("records")
+}
+
+model CaseThread {
+  id        BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  recordId  BigInt        @unique @map("record_id") @db.UnsignedBigInt
+  isClosed  Boolean       @default(false) @map("is_closed")
+  closedAt  DateTime?     @map("closed_at") @db.DateTime(0)
+  createdAt DateTime      @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.DateTime(0)
+  record    Record        @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  messages  CaseMessage[]
+
+  @@map("case_threads")
+}
+
+model CaseMessage {
+  id             BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  threadId       BigInt        @map("thread_id") @db.UnsignedBigInt
+  authorId       BigInt        @map("author_id") @db.UnsignedBigInt
+  authorRole     String        @map("author_role") @db.VarChar(20)
+  authorName     String        @map("author_name") @db.VarChar(150)
+  authorPosition String        @map("author_position") @db.VarChar(100)
+  body           String?       @db.Text
+  attachmentUrl  String?       @map("attachment_url") @db.LongText
+  attachmentName String?       @map("attachment_name") @db.VarChar(255)
+  audioUrl       String?       @map("audio_url") @db.LongText
+  reactions      Json?
+  replyToId      BigInt?       @map("reply_to_id") @db.UnsignedBigInt
+  createdAt      DateTime      @default(now()) @map("created_at") @db.DateTime(0)
+  thread         CaseThread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  replyTo        CaseMessage?  @relation("CaseMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        CaseMessage[] @relation("CaseMessageReplies")
+
+  @@index([threadId, createdAt])
+  @@index([replyToId])
+  @@map("case_messages")
 }
 
 model StudentLocation {
@@ -144,17 +189,17 @@ model StudentLocation {
 }
 
 model SchoolEvent {
-  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  title        String   @db.VarChar(200)
-  description  String?  @db.Text
-  date         DateTime @db.Date
-  time         String   @default("") @db.VarChar(100)
-  location     String   @default("") @db.VarChar(200)
-  category     String   @default("academic") @db.VarChar(50)
-  categoryLabel String  @default("Academic") @map("categoryLabel") @db.VarChar(100)
-  color        String   @default("#07345f") @db.VarChar(20)
-  attendees    String   @default("All Students") @db.VarChar(200)
-  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  id            BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  title         String   @db.VarChar(200)
+  description   String?  @db.Text
+  date          DateTime @db.Date
+  time          String   @default("") @db.VarChar(100)
+  location      String   @default("") @db.VarChar(200)
+  category      String   @default("academic") @db.VarChar(50)
+  categoryLabel String   @default("Academic") @map("categoryLabel") @db.VarChar(100)
+  color         String   @default("#07345f") @db.VarChar(20)
+  attendees     String   @default("All Students") @db.VarChar(200)
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(0)
 
   @@map("school_events")
 }
@@ -213,6 +258,7 @@ model Session {
   role      String   @db.VarChar(20)
   expiresAt DateTime @map("expires_at") @db.DateTime(0)
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
   @@index([expiresAt])
   @@map("sessions")
 }

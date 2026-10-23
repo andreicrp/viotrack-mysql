@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
@@ -9,11 +9,11 @@ import {
   ArrowRight,
   CheckCircle2,
   ShieldAlert,
-  AlertTriangle,
   KeyRound,
   X,
   Mail,
   Building2
+  ,Info, ArrowLeft
 } from 'lucide-react';
 import { LegalModal } from '../components/legal/LegalModal';
 import {
@@ -53,38 +53,13 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // Progressive Brute-Force Rate Limiting State (persisted across reloads)
-  const [throttle, setThrottle] = useState(() => {
-    try {
-      const saved = localStorage.getItem('viotrack_login_throttle');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.lockoutUntil && parsed.lockoutUntil > Date.now()) {
-          return parsed;
-        }
-        return { failedAttempts: parsed.failedAttempts || 0, lockoutUntil: 0 };
-      }
-    } catch {}
-    return { failedAttempts: 0, lockoutUntil: 0 };
-  });
-
-  const [remainingSeconds, setRemainingSeconds] = useState(0);
-
-  // Countdown timer for lockout duration
-  useEffect(() => {
-    const checkLockout = () => {
-      const now = Date.now();
-      if (throttle.lockoutUntil && throttle.lockoutUntil > now) {
-        setRemainingSeconds(Math.ceil((throttle.lockoutUntil - now) / 1000));
-      } else {
-        setRemainingSeconds(0);
-      }
-    };
-    checkLockout();
-    const interval = setInterval(checkLockout, 1000);
-    return () => clearInterval(interval);
-  }, [throttle.lockoutUntil]);
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [twoFactorDigits, setTwoFactorDigits] = useState(['', '', '', '', '', '']);
+  const [twoFactorSeconds, setTwoFactorSeconds] = useState(30);
+  const [twoFactorSuccess, setTwoFactorSuccess] = useState(false);
+  const [useRecoveryCode, setUseRecoveryCode] = useState(false);
+  const twoFactorInputRefs = useRef([]);
 
   // If already authenticated and not explicitly redirected due to logout, go straight to targetDestination or dashboard
   useEffect(() => {
@@ -103,11 +78,6 @@ export const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (remainingSeconds > 0) {
-      showError(`Security lockout is active. Please wait ${remainingSeconds}s before retrying.`);
-      return;
-    }
-
     const cleanInput = sanitizeText(email).trim().toLowerCase();
     const cleanPassword = password;
 
@@ -118,18 +88,21 @@ export const LoginPage = () => {
 
     setLoading(true);
     try {
-      const { user: authenticatedUser } = await apiPost('/auth/login', {
+      const loginResult = await apiPost('/auth/login', {
         email: cleanInput,
         password: cleanPassword,
         rememberMe
       });
 
-      // Clear failed attempts upon successful authentication
-      try {
-        localStorage.removeItem('viotrack_login_throttle');
-      } catch {}
-      setThrottle({ failedAttempts: 0, lockoutUntil: 0 });
-
+      if (loginResult.requiresTwoFactor) {
+        setRequiresTwoFactor(true);
+        setTwoFactorSuccess(false);
+        setUseRecoveryCode(false);
+        setTwoFactorDigits(['', '', '', '', '', '']);
+        setTwoFactorCode('');
+        return;
+      }
+      const { user: authenticatedUser } = loginResult;
       login(authenticatedUser);
       success(`Welcome back! Signed in as ${authenticatedUser.role === 'admin' ? 'Administrator' : 'Faculty'}.`);
       navigate(getSafeDestination(authenticatedUser.role, rawTargetDestination));
@@ -145,33 +118,157 @@ export const LoginPage = () => {
         return;
       }
 
-      const nextFailed = (throttle.failedAttempts || 0) + 1;
-      let nextLockout = 0;
-      let alertMsg = authIssue.message || 'Authentication failed. Please verify your credentials.';
-
-      if (nextFailed >= 5) {
-        // 5 consecutive failures = 5-minute lockout
-        nextLockout = Date.now() + 5 * 60 * 1000;
-        alertMsg = 'Security Lockout: 5 consecutive failed attempts. System access locked for 5 minutes.';
-      } else if (nextFailed >= 3) {
-        // 3 consecutive failures = 30-second lockout
-        nextLockout = Date.now() + 30 * 1000;
-        alertMsg = 'Security Lockout: 3 failed attempts. Please wait 30 seconds before retrying.';
-      } else {
-        alertMsg += ` (${nextFailed}/3 attempts before temporary lockout)`;
-      }
-
-      const updated = { failedAttempts: nextFailed, lockoutUntil: nextLockout };
-      setThrottle(updated);
-      try {
-        localStorage.setItem('viotrack_login_throttle', JSON.stringify(updated));
-      } catch {}
-
-      showError(alertMsg);
+      // The server owns sign-in throttling; browser storage can be cleared and
+      // must not impose a misleading lockout on a legitimate user.
+      showError(authIssue.message || 'Unable to sign in. Please verify your credentials and retry.');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleTwoFactorSubmit = async (e) => {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(twoFactorCode)) {
+      showError('Enter the 6-digit code from Google Authenticator.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { user: authenticatedUser } = await apiPost('/auth/verify-2fa', { code: twoFactorCode });
+      login(authenticatedUser);
+      success('Two-factor verification complete.');
+      setTwoFactorSuccess(true);
+      window.setTimeout(() => navigate(getSafeDestination(authenticatedUser.role, rawTargetDestination), { replace: true }), 1100);
+    } catch (authIssue) {
+      showError(authIssue.message || 'The verification code is incorrect.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRecoverySubmit = async (event) => {
+    event.preventDefault();
+    const recoveryCode = twoFactorCode.trim();
+    if (!recoveryCode) {
+      showError('Enter one of your recovery codes.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { user: authenticatedUser } = await apiPost('/auth/verify-2fa', { code: recoveryCode });
+      login(authenticatedUser);
+      success('Recovery code accepted.');
+      setTwoFactorSuccess(true);
+      window.setTimeout(() => navigate(getSafeDestination(authenticatedUser.role, rawTargetDestination), { replace: true }), 1100);
+    } catch (authIssue) {
+      showError(authIssue.message || 'The recovery code is invalid or has already been used.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!requiresTwoFactor || twoFactorSuccess) return undefined;
+    setTwoFactorSeconds(30);
+    const timer = window.setInterval(() => {
+      setTwoFactorSeconds((seconds) => seconds <= 1 ? 30 : seconds - 1);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [requiresTwoFactor, twoFactorSuccess]);
+
+  const updateTwoFactorDigits = (digits) => {
+    const nextDigits = digits.replace(/\D/g, '').slice(0, 6).split('');
+    while (nextDigits.length < 6) nextDigits.push('');
+    setTwoFactorDigits(nextDigits);
+    setTwoFactorCode(nextDigits.join(''));
+  };
+
+  const handleTwoFactorDigitChange = (index, event) => {
+    const value = event.target.value.replace(/\D/g, '').slice(-1);
+    const nextDigits = [...twoFactorDigits];
+    nextDigits[index] = value;
+    setTwoFactorDigits(nextDigits);
+    setTwoFactorCode(nextDigits.join(''));
+    if (value && index < 5) twoFactorInputRefs.current[index + 1]?.focus();
+  };
+
+  const handleTwoFactorKeyDown = (index, event) => {
+    if (event.key === 'Backspace' && !twoFactorDigits[index] && index > 0) {
+      twoFactorInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleTwoFactorPaste = (event) => {
+    event.preventDefault();
+    updateTwoFactorDigits(event.clipboardData.getData('text'));
+  };
+
+  if (requiresTwoFactor) {
+    return (
+      <main className="login-body-bg" id="main-content">
+        <div className="login-bg-shape-top-left" />
+        <div className="login-bg-shape-bottom-right" />
+        <div className="login-content-wrapper">
+          <div className="login-brand-header">
+            <svg className="login-brand-logo-svg" viewBox="0 0 500 370" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="195" cy="96" r="30" fill="#07345F" />
+              <path d="M 120 105 Q 108 96 110 110 L 122 206 Q 124 214 132 222 L 235 324 Q 243 332 243 320 L 243 202 Q 243 194 235 188 Z" fill="#07345F" />
+              <circle cx="305" cy="96" r="30" fill="#07345F" />
+              <path d="M 380 105 Q 392 96 390 110 L 378 206 Q 376 214 368 222 L 265 324 Q 257 332 257 320 L 257 202 Q 257 194 265 188 Z" fill="#0EA5A0" />
+            </svg>
+            <h1 className="login-brand-title">VIOTRACK</h1>
+            <p className="login-brand-tagline">
+              A Student Violation Tracking and Monitoring System
+              <span className="login-brand-tagline-sub">Using QR Code and Dashboard</span>
+            </p>
+          </div>
+          <div className="login-card-modern login-2fa-card">
+            {twoFactorSuccess ? (
+              <div className="login-2fa-success-state">
+                <div className="login-2fa-success-icon"><CheckCircle2 size={30} /></div>
+                <h1>Verification successful</h1>
+                <p>Your identity has been verified.</p>
+                <div className="login-2fa-success-bar" />
+                <span>Continuing to your dashboard…</span>
+              </div>
+            ) : <>
+              <div className="login-2fa-topbar">
+                <button type="button" className="login-2fa-icon-button" aria-label="Back to login" onClick={() => { setRequiresTwoFactor(false); setTwoFactorCode(''); setTwoFactorDigits(['', '', '', '', '', '']); }}><ArrowLeft size={16} /></button>
+                <Info size={15} className="login-2fa-info-icon" />
+              </div>
+              {useRecoveryCode ? <>
+                <div className="login-2fa-header">
+                  <h1>Use a recovery code</h1>
+                  <p>Enter one of the backup codes you saved when you enabled two-factor authentication.</p>
+                </div>
+                <form onSubmit={handleRecoverySubmit} className="login-2fa-form login-recovery-form">
+                  <label htmlFor="recovery-code">Recovery code</label>
+                  <input id="recovery-code" className="login-text-input-clean login-recovery-input" autoComplete="one-time-code" placeholder="XXXXXXXXXX" value={twoFactorCode} onChange={(event) => setTwoFactorCode(event.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10))} autoFocus />
+                  <p className="login-2fa-help"><Info size={12} /> Each recovery code can be used only once.</p>
+                  <button className="login-submit-btn-primary login-2fa-submit" type="submit" disabled={loading}>{loading ? 'Verifying…' : 'Use recovery code'} <ArrowRight size={15} /></button>
+                </form>
+                <button className="login-2fa-alternative" type="button" onClick={() => { setUseRecoveryCode(false); setTwoFactorCode(''); setTwoFactorDigits(['', '', '', '', '', '']); }}>Use authenticator app instead</button>
+              </> : <>
+                <div className="login-2fa-header">
+                  <h1>Two-factor authentication</h1>
+                  <p>Enter the 6-digit code from your authenticator app.</p>
+                </div>
+                <form onSubmit={handleTwoFactorSubmit} className="login-2fa-form">
+                  <label>Authenticator code</label>
+                  <div className="login-2fa-code-grid" onPaste={handleTwoFactorPaste}>
+                    {twoFactorDigits.map((digit, index) => <input key={index} ref={(element) => { twoFactorInputRefs.current[index] = element; }} className="login-text-input-clean login-2fa-code-box" inputMode="numeric" autoComplete={index === 0 ? 'one-time-code' : 'off'} maxLength={1} aria-label={`Authenticator digit ${index + 1}`} value={digit} onChange={(event) => handleTwoFactorDigitChange(index, event)} onKeyDown={(event) => handleTwoFactorKeyDown(index, event)} autoFocus={index === 0} />)}
+                  </div>
+                  <p id="two-factor-help" className="login-2fa-help"><Info size={12} /> Code refreshes in <strong>00:{String(twoFactorSeconds).padStart(2, '0')}</strong></p>
+                  <button className="login-submit-btn-primary login-2fa-submit" type="submit" disabled={loading}>{loading ? 'Verifying…' : 'Verify & continue'} <ArrowRight size={15} /></button>
+                </form>
+                <button className="login-2fa-alternative" type="button" onClick={() => { setUseRecoveryCode(true); setTwoFactorCode(''); setTwoFactorDigits(['', '', '', '', '', '']); }}>Use another method</button>
+              </>}
+            </>}
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main id="main-content" tabIndex="-1" className="login-body-bg">
@@ -275,25 +372,6 @@ export const LoginPage = () => {
         {/* Clean Login Card */}
         <div className="login-card-modern">
           <form onSubmit={handleSubmit} autoComplete="off" data-lpignore="true" data-form-type="other">
-            {/* Active Security Lockout Alert Banner */}
-            {remainingSeconds > 0 && (
-              <div className="login-security-lockout-banner" role="alert">
-                <ShieldAlert size={20} color="#dc2626" style={{ flexShrink: 0 }} />
-                <div>
-                  <strong>Security Lockout Active</strong>
-                  <span>Too many failed login attempts. Retry in {remainingSeconds}s.</span>
-                </div>
-              </div>
-            )}
-
-            {/* Warning Pill for 1 or 2 Failed Attempts */}
-            {throttle.failedAttempts > 0 && remainingSeconds === 0 && (
-              <div className="login-failed-attempts-pill" role="status">
-                <AlertTriangle size={13} />
-                <span>Security Notice: {throttle.failedAttempts}/3 attempts before temporary lockout</span>
-              </div>
-            )}
-
             {/* Email Identifier Input */}
             <div className="login-input-field-wrap">
               <input
@@ -306,7 +384,7 @@ export const LoginPage = () => {
                 required
                 autoComplete="off"
                 data-lpignore="true"
-                disabled={loading || remainingSeconds > 0}
+                disabled={loading}
               />
             </div>
 
@@ -322,7 +400,7 @@ export const LoginPage = () => {
                 required
                 autoComplete="new-password"
                 data-lpignore="true"
-                disabled={loading || remainingSeconds > 0}
+                disabled={loading}
               />
               <button
                 type="button"
@@ -363,11 +441,11 @@ export const LoginPage = () => {
             {/* SIGN IN Action Button */}
             <button
               type="submit"
-              className={`login-submit-btn-primary ${remainingSeconds > 0 ? 'is-locked' : ''}`}
-              disabled={loading || remainingSeconds > 0}
+              className="login-submit-btn-primary"
+              disabled={loading}
             >
-              <span>{remainingSeconds > 0 ? `LOCKED (${remainingSeconds}s)` : loading ? 'Authenticating...' : 'SIGN IN'}</span>
-              {!loading && remainingSeconds === 0 && <ArrowRight size={16} />}
+              <span>{loading ? 'Authenticating...' : 'SIGN IN'}</span>
+              {!loading && <ArrowRight size={16} />}
             </button>
 
             {isQrProtected ? (

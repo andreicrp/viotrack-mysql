@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Check, LoaderCircle, SpellCheck, X } from 'lucide-react';
 
-const API_URL = (import.meta.env.VITE_LANGUAGETOOL_API_URL || '').trim();
+const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '');
+const API_URL = `${API_BASE_URL}/api/languagetool/check`;
 
 export const LanguageToolTextarea = ({ value, onChange, style, rows, placeholder, className, ...textareaProps }) => {
   const text = typeof value === 'string' ? value : '';

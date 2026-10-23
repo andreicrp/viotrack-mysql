@@ -362,19 +362,11 @@ export const ActivityLogsPage = () => {
             </button>
 
             <button
-              onClick={() => handleOpenExportSaveAs('pdf')}
-              className="page-banner-btn-secondary"
-              title="Save As formatted PDF audit report"
-            >
-              <Upload size={14} strokeWidth={2.2} /> Export PDF
-            </button>
-
-            <button
               onClick={() => handleOpenExportSaveAs('csv')}
               className="page-banner-btn-secondary"
-              title="Save As CSV / Excel audit log"
+              title="Export the audit log as CSV, Excel, or PDF"
             >
-              <FileText size={14} strokeWidth={2.2} /> Export CSV
+              <FileText size={14} strokeWidth={2.2} /> Export
             </button>
           </div>
 

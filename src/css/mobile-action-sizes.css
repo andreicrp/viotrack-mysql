@@ -1,0 +1,110 @@
+/* Keep card action buttons consistent with the compact Students list on phones. */
+@media (max-width: 480px) {
+  .responsive-cards-mobile.grid-view,
+  .student-directory-cards.grid-view,
+  .violations-mobile-cards.grid-view,
+  .admin-users-mobile-cards.grid-view,
+  .violation-types-page .responsive-cards-mobile.grid-view {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .responsive-cards-mobile.grid-view .entity-grid-card {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 8px;
+    width: 100%;
+    min-width: 0;
+    padding: 12px !important;
+  }
+
+  .responsive-cards-mobile.grid-view .entity-grid-card > .entity-grid-top-badges {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .responsive-cards-mobile.grid-view .entity-grid-card > .entity-grid-avatar {
+    grid-column: 1;
+    grid-row: 2;
+    width: 42px !important;
+    height: 42px !important;
+    margin: 0 !important;
+  }
+
+  .responsive-cards-mobile.grid-view .entity-grid-card > .entity-grid-name {
+    grid-column: 2;
+    grid-row: 2;
+    width: auto;
+    text-align: left;
+    display: block;
+    overflow: visible;
+    font-size: 14px !important;
+    line-height: 1.3;
+  }
+
+  .responsive-cards-mobile.grid-view .entity-grid-card > .entity-grid-meta {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
+    min-width: 0;
+    padding: 9px 10px !important;
+  }
+
+  .responsive-cards-mobile.grid-view .entity-grid-card > .entity-grid-actions {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    min-width: 0;
+    margin-top: 0;
+    padding-top: 8px;
+  }
+
+  .teacher-directory-page .responsive-cards-mobile.grid-view .entity-grid-actions {
+    justify-content: flex-start;
+    gap: 8px !important;
+  }
+
+  .teacher-directory-page .responsive-cards-mobile.grid-view .entity-grid-actions > button:first-child {
+    flex: 1 1 auto !important;
+  }
+
+  .teacher-directory-page .responsive-cards-mobile.grid-view .entity-grid-actions > .teacher-grid-edit-action,
+  .teacher-directory-page .responsive-cards-mobile.grid-view .entity-grid-actions > button.is-delete {
+    flex: 0 0 auto !important;
+    min-width: 72px;
+  }
+
+  .student-mobile-list-actions > button,
+  .teacher-mobile-list-actions > button,
+  .admin-mobile-list-actions > button,
+  .student-directory-list-actions > button,
+  .violations-page .violation-list-mobile-actions > button,
+  .student-violation-detail-page .violation-list-mobile-actions > button,
+  .violation-types-page .violation-catalog-mobile-actions > button,
+  .for-approval-page .approval-mobile-card-actions > button,
+  .responsive-cards-mobile .entity-grid-actions > button {
+    box-sizing: border-box;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 6px 9px !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    gap: 5px !important;
+    white-space: nowrap;
+  }
+
+  .student-mobile-list-actions > button > svg,
+  .teacher-mobile-list-actions > button > svg,
+  .admin-mobile-list-actions > button > svg,
+  .student-directory-list-actions > button > svg,
+  .violations-page .violation-list-mobile-actions > button > svg,
+  .student-violation-detail-page .violation-list-mobile-actions > button > svg,
+  .violation-types-page .violation-catalog-mobile-actions > button > svg,
+  .for-approval-page .approval-mobile-card-actions > button > svg,
+  .responsive-cards-mobile .entity-grid-actions > button > svg {
+    width: 13px !important;
+    height: 13px !important;
+    flex: 0 0 auto;
+  }
+}

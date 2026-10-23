@@ -3,10 +3,13 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
 import express, { type ErrorRequestHandler } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import { Prisma } from "@prisma/client";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import { Prisma } from "../prisma/generated/prisma/client.js";
 import { resolve } from "node:path";
 import {
   authenticate,
+  clearMfaChallengeCookie,
   clearSessionCookie,
   csrfProtection,
   getSessionCookieName,
@@ -14,17 +17,59 @@ import {
   isAllowedFrontendOrigin,
   requireAdmin,
   requireAuth,
+  createSessionForUser,
+  readMfaChallenge,
   safeUser,
   setCsrfCookie,
+  setMfaChallengeCookie,
   setSessionCookie,
   verifyPassword,
 } from "./auth.js";
 import { prisma } from "./db.js";
+import { ensureStudentAvatar } from "../shared/studentAvatar.js";
+import QRCode from "qrcode";
+import {
+  createOtpAuthUri,
+  decryptTotpSecret,
+  encryptTotpSecret,
+  generateTotpSecret,
+  generateRecoveryCodes,
+  verifyTotpCode,
+} from "./twoFactor.js";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const maxImageBytes = 4 * 1024 * 1024;
 app.disable("x-powered-by");
+// Baseline browser security headers. CSP is intentionally left for a separate
+// report-only rollout because this app still uses inline styles in places.
+app.use(helmet({ contentSecurityPolicy: false }));
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again later." },
+});
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many sign-in attempts. Please try again later." },
+});
+const restoreLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many restore attempts. Please try again later." },
+});
+app.use("/api", apiLimiter);
+// Apply expensive-route limits before JSON parsing so rejected requests do not
+// consume memory while the server decodes large bodies.
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/database/restore", restoreLimiter);
 app.use(
   cors({
     origin(origin, callback) {
@@ -37,10 +82,18 @@ app.use(
     credentials: true,
   }),
 );
-app.use("/api/database/restore", express.json({ limit: "100mb" }));
+app.use("/api/database/restore", express.json({ limit: "50mb" }));
 app.use(express.json({ limit: "6mb" }));
 app.use(cookieParser());
-app.use("/api", csrfProtection);
+app.use("/api", (req, res, next) => {
+  // Grammar checking is a read-only proxy to the local LanguageTool service;
+  // it does not need a session or CSRF token.
+  if (req.path === "/languagetool/check") {
+    next();
+    return;
+  }
+  csrfProtection(req, res, next);
+});
 
 const jsonValue = (value: unknown): unknown =>
   JSON.parse(JSON.stringify(value, (_key, item) =>
@@ -151,6 +204,34 @@ const toId = (value: string) => {
   return BigInt(value);
 };
 
+const ensureCaseThread = async (tx: Prisma.TransactionClient, recordId: bigint) =>
+  tx.caseThread.upsert({
+    where: { recordId },
+    create: { recordId },
+    update: {},
+  });
+
+type CaseDiscussionListener = {
+  response: express.Response;
+  user: NonNullable<express.Request["user"]>;
+};
+const caseDiscussionListeners = new Set<CaseDiscussionListener>();
+const publishCaseDiscussionEvent = (
+  event: "discussion" | "typing",
+  record: { reportedByType: string | null; reportedById: bigint | null },
+  payload: Record<string, unknown>,
+) => {
+  const data = `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
+  for (const listener of caseDiscussionListeners) {
+    const canView = listener.user.role === "admin" || (
+      listener.user.role === "teacher" &&
+      record.reportedByType === "teacher" &&
+      record.reportedById === listener.user.id
+    );
+    if (canView) listener.response.write(data);
+  }
+};
+
 const serializeUser = async (user: NonNullable<express.Request["user"]>) => {
   const account =
     user.role === "admin"
@@ -179,6 +260,60 @@ const serializeUser = async (user: NonNullable<express.Request["user"]>) => {
 
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
 
+// Keep LanguageTool behind the API server because its HTTP server does not
+// enable browser CORS by default.
+app.post(
+  "/api/languagetool/check",
+  express.urlencoded({ extended: false, limit: "256kb" }),
+  asyncRoute(async (req, res) => {
+    const text = typeof req.body?.text === "string" ? req.body.text : "";
+    const language = typeof req.body?.language === "string" ? req.body.language : "en-US";
+
+    if (!text.trim()) {
+      res.json({ matches: [] });
+      return;
+    }
+
+    const endpoint = process.env.LANGUAGETOOL_API_URL || "http://127.0.0.1:8010/v2/check";
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ text, language }),
+        signal: controller.signal
+      });
+      const responseText = await response.text();
+      if (!response.ok) {
+        res.status(502).json({ error: `LanguageTool returned HTTP ${response.status}.` });
+        return;
+      }
+
+      let result: unknown;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        res.status(502).json({ error: "LanguageTool returned invalid JSON." });
+        return;
+      }
+      if (!result || typeof result !== "object" || !Array.isArray((result as { matches?: unknown }).matches)) {
+        res.status(502).json({ error: "LanguageTool returned an invalid response." });
+        return;
+      }
+      res.json(result);
+    } catch (error) {
+      const message = error instanceof Error && error.name === "AbortError"
+        ? "LanguageTool did not respond within 10 seconds."
+        : "LanguageTool is unavailable. Start the local LanguageTool server on port 8010.";
+      res.status(502).json({ error: message });
+    } finally {
+      clearTimeout(timeout);
+    }
+  })
+);
+
 app.get("/api/auth/csrf", (_req, res) => {
   const token = randomBytes(32).toString("base64url");
   setCsrfCookie(res, token);
@@ -201,8 +336,123 @@ app.post(
       res.status(401).json({ error: "Invalid email or password." });
       return;
     }
+    if (result.requiresTwoFactor) {
+      setMfaChallengeCookie(res, result.user, body.rememberMe === true);
+      res.json({ requiresTwoFactor: true });
+      return;
+    }
     setSessionCookie(res, result.token, body.rememberMe === true);
-    res.json({ user: safeUser(result.user) });
+    res.json({ user: safeUser(result.user), requiresTwoFactor: false });
+  }),
+);
+
+app.post(
+  "/api/auth/verify-2fa",
+  asyncRoute(async (req, res) => {
+    const body = bodyObject(req.body);
+    const code = typeof body.code === "string" ? body.code : "";
+    const challenge = readMfaChallenge(req);
+    const isAuthenticatorCode = /^\d{6}$/.test(code);
+    const isRecoveryCode = /^[a-z0-9]{10}$/i.test(code.trim());
+    if (!challenge || (!isAuthenticatorCode && !isRecoveryCode)) {
+      res.status(401).json({ error: "The verification code is invalid or has expired." });
+      return;
+    }
+    let sessionUser;
+    if (challenge.role === "admin") {
+      const account = await prisma.admin.findUnique({ where: { id: BigInt(challenge.id) } });
+      if (!account?.twoFactorEnabled || !account.twoFactorSecret) {
+        res.status(401).json({ error: "Incorrect or unavailable verification code." });
+        return;
+      }
+      const isTotpValid = verifyTotpCode(decryptTotpSecret(account.twoFactorSecret), code);
+      let recoveryIndex = -1;
+      if (!isTotpValid && account.twoFactorRecoveryCodes) {
+        const storedCodes = JSON.parse(account.twoFactorRecoveryCodes) as string[];
+        for (let index = 0; index < storedCodes.length; index += 1) {
+          if (await verifyPassword(code.toUpperCase(), storedCodes[index])) { recoveryIndex = index; break; }
+        }
+        if (recoveryIndex >= 0) {
+          storedCodes.splice(recoveryIndex, 1);
+          await prisma.admin.update({ where: { id: account.id }, data: { twoFactorRecoveryCodes: JSON.stringify(storedCodes) } });
+        }
+      }
+      if (!isTotpValid && recoveryIndex < 0) {
+        res.status(401).json({ error: "Incorrect or unavailable verification code." });
+        return;
+      }
+      sessionUser = { id: account.id, email: account.email, name: `${account.fname} ${account.lname}`.trim(), role: "admin" as const, position: account.position, avatar: account.image, adviserSection: null };
+    } else {
+      const account = await prisma.teacher.findUnique({ where: { id: BigInt(challenge.id) }, include: { advisers: true } });
+      if (!account?.twoFactorEnabled || !account.twoFactorSecret) {
+        res.status(401).json({ error: "Incorrect or unavailable verification code." });
+        return;
+      }
+      const isTotpValid = verifyTotpCode(decryptTotpSecret(account.twoFactorSecret), code);
+      let recoveryIndex = -1;
+      if (!isTotpValid && account.twoFactorRecoveryCodes) {
+        const storedCodes = JSON.parse(account.twoFactorRecoveryCodes) as string[];
+        for (let index = 0; index < storedCodes.length; index += 1) {
+          if (await verifyPassword(code.toUpperCase(), storedCodes[index])) { recoveryIndex = index; break; }
+        }
+        if (recoveryIndex >= 0) {
+          storedCodes.splice(recoveryIndex, 1);
+          await prisma.teacher.update({ where: { id: account.id }, data: { twoFactorRecoveryCodes: JSON.stringify(storedCodes) } });
+        }
+      }
+      if (!isTotpValid && recoveryIndex < 0) {
+        res.status(401).json({ error: "Incorrect or unavailable verification code." });
+        return;
+      }
+      const adviser = account.advisers[0];
+      sessionUser = { id: account.id, email: account.email, name: `${account.fname} ${account.lname}`.trim(), role: "teacher" as const, position: account.position, department: account.department, phone: account.contact, avatar: account.image, adviserSection: adviser ? { grade: adviser.gradeLevel, section: adviser.classSection } : null };
+    }
+    setSessionCookie(res, await createSessionForUser(sessionUser), challenge.rememberMe);
+    clearMfaChallengeCookie(res);
+    res.json({ user: safeUser(sessionUser) });
+  }),
+);
+
+app.post(
+  "/api/auth/2fa/setup",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const account = req.user!.role === "admin"
+      ? await prisma.admin.findUnique({ where: { id: req.user!.id } })
+      : await prisma.teacher.findUnique({ where: { id: req.user!.id } });
+    if (!account) { res.status(404).json({ error: "Account not found." }); return; }
+    const secret = generateTotpSecret();
+    const uri = createOtpAuthUri(secret, account.email);
+    const qrCode = await QRCode.toDataURL(uri, { margin: 2, width: 240 });
+    res.json({ qrCode, secret });
+  }),
+);
+
+app.get(
+  "/api/auth/2fa/status",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const account = req.user!.role === "admin"
+      ? await prisma.admin.findUnique({ where: { id: req.user!.id }, select: { twoFactorEnabled: true } })
+      : await prisma.teacher.findUnique({ where: { id: req.user!.id }, select: { twoFactorEnabled: true } });
+    res.json({ enabled: Boolean(account?.twoFactorEnabled) });
+  }),
+);
+
+app.post(
+  "/api/auth/2fa/enable",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const body = bodyObject(req.body);
+    const secret = typeof body.secret === "string" ? body.secret : "";
+    const code = typeof body.code === "string" ? body.code : "";
+    if (!secret || !verifyTotpCode(secret, code)) { res.status(400).json({ error: "Enter the current authenticator code." }); return; }
+    const recoveryCodes = generateRecoveryCodes();
+    const hashedRecoveryCodes = await Promise.all(recoveryCodes.map((recoveryCode) => hashPassword(recoveryCode)));
+    const data = { twoFactorEnabled: true, twoFactorSecret: encryptTotpSecret(secret), twoFactorRecoveryCodes: JSON.stringify(hashedRecoveryCodes) };
+    if (req.user!.role === "admin") await prisma.admin.update({ where: { id: req.user!.id }, data });
+    else await prisma.teacher.update({ where: { id: req.user!.id }, data });
+    res.json({ enabled: true, recoveryCodes });
   }),
 );
 
@@ -715,7 +965,11 @@ app.get(
           ],
         }
       : {};
-    if (req.user!.role === "teacher" && req.user!.adviserSection) {
+    // Teachers need to be able to report incidents for students they encounter
+    // outside their assigned class. The class roster remains section-scoped in
+    // the normal request, while the reporting flow opts into the full roster.
+    const isReportingLookup = String(req.query.purpose ?? "") === "report";
+    if (req.user!.role === "teacher" && req.user!.adviserSection && !isReportingLookup) {
       where.grade = req.user!.adviserSection.grade;
       where.section = req.user!.adviserSection.section;
     }
@@ -749,14 +1003,17 @@ app.post(
       if (typeof fields.studentId !== "string" || !fields.studentId.trim()) {
         throw Object.assign(new Error("Every student must have a student ID."), { status: 400 });
       }
-      return fields as Prisma.StudentCreateManyInput;
+      return ensureStudentAvatar(fields as Prisma.StudentCreateManyInput);
     });
     const savedStudents = await prisma.$transaction(
       students.map((student) =>
         prisma.student.upsert({
           where: { studentId: String(student.studentId) },
           create: student,
-          update: student,
+          update: {
+            ...student,
+            image: typeof student.image === "string" && student.image.trim() ? student.image : undefined,
+          },
         }),
       ),
     );
@@ -775,7 +1032,7 @@ app.post(
       return;
     }
     const student = await prisma.student.create({
-      data: fields as Prisma.StudentCreateInput,
+      data: ensureStudentAvatar(fields as Prisma.StudentCreateInput),
     });
     res.status(201).json(jsonValue(student));
   }),
@@ -946,6 +1203,360 @@ app.post(
   }),
 );
 
+// Case discussion endpoints include live updates and persisted reply references.
+app.get(
+  "/api/case-discussions/events",
+  requireAuth,
+  (req, res) => {
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+    const listener: CaseDiscussionListener = { response: res, user: req.user! };
+    caseDiscussionListeners.add(listener);
+    res.write(": connected\n\n");
+    const heartbeat = setInterval(() => res.write(": keep-alive\n\n"), 25000);
+    req.on("close", () => {
+      clearInterval(heartbeat);
+      caseDiscussionListeners.delete(listener);
+    });
+  },
+);
+
+app.post(
+  "/api/case-discussions/:threadId/typing",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const thread = await prisma.caseThread.findUnique({
+      where: { id: toId(String(req.params.threadId)) },
+      include: { record: { select: { approvalStatus: true, reportedByType: true, reportedById: true } } },
+    });
+    if (!thread || thread.isClosed || thread.record.approvalStatus !== "Approved") {
+      res.status(404).json({ error: "Approved case discussion not found." });
+      return;
+    }
+    if (
+      req.user!.role === "teacher" &&
+      (thread.record.reportedByType !== "teacher" || thread.record.reportedById !== req.user!.id)
+    ) {
+      res.status(403).json({ error: "You can only access discussions for cases you reported." });
+      return;
+    }
+    const typing = Boolean(bodyObject(req.body).typing);
+    publishCaseDiscussionEvent("typing", thread.record, {
+      threadId: String(thread.id),
+      userId: String(req.user!.id),
+      role: req.user!.role,
+      name: req.user!.name,
+      typing,
+    });
+    res.json({ ok: true });
+  }),
+);
+
+app.post(
+  "/api/case-discussions/:threadId/close",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const thread = await prisma.caseThread.findUnique({
+      where: { id: toId(String(req.params.threadId)) },
+      include: {
+        record: { select: { approvalStatus: true, status: true, reportedByType: true, reportedById: true } },
+      },
+    });
+    if (!thread || thread.isClosed || thread.record.approvalStatus !== "Approved") {
+      res.status(404).json({ error: "Open approved case discussion not found." });
+      return;
+    }
+    if (
+      req.user!.role === "teacher" &&
+      (thread.record.reportedByType !== "teacher" || thread.record.reportedById !== req.user!.id)
+    ) {
+      res.status(403).json({ error: "You can only access discussions for cases you reported." });
+      return;
+    }
+    if (String(thread.record.status || "").toLowerCase() !== "resolved") {
+      res.status(409).json({ error: "Only resolved case discussions can be closed." });
+      return;
+    }
+    await prisma.caseThread.update({
+      where: { id: thread.id },
+      data: { isClosed: true, closedAt: new Date(), updatedAt: new Date() },
+    });
+    publishCaseDiscussionEvent("discussion", thread.record, { threadId: String(thread.id), closed: true });
+    res.json({ ok: true });
+  }),
+);
+
+app.get(
+  "/api/case-discussions/closed",
+  requireAuth,
+  requireAdmin,
+  asyncRoute(async (_req, res) => {
+    const rows = await prisma.caseThread.findMany({
+      where: { isClosed: true },
+      include: {
+        record: { include: { student: true, violation: true } },
+        messages: {
+          orderBy: { createdAt: "asc" },
+          include: { replyTo: true },
+        },
+      },
+      orderBy: { closedAt: "desc" },
+    });
+    const teacherIds = [...new Set(rows.flatMap((thread) =>
+      thread.messages.filter((message) => message.authorRole === "teacher").map((message) => message.authorId),
+    ))];
+    const adminIds = [...new Set(rows.flatMap((thread) =>
+      thread.messages.filter((message) => message.authorRole === "admin").map((message) => message.authorId),
+    ))];
+    const [teacherProfiles, adminProfiles] = await Promise.all([
+      teacherIds.length
+        ? prisma.teacher.findMany({ where: { id: { in: teacherIds } }, select: { id: true, image: true } })
+        : Promise.resolve([]),
+      adminIds.length
+        ? prisma.admin.findMany({ where: { id: { in: adminIds } }, select: { id: true, image: true } })
+        : Promise.resolve([]),
+    ]);
+    const teacherImages = new Map(teacherProfiles.map((teacher) => [String(teacher.id), teacher.image]));
+    const adminImages = new Map(adminProfiles.map((admin) => [String(admin.id), admin.image]));
+    const rowsWithAuthorImages = rows.map((thread) => ({
+      ...thread,
+      messages: thread.messages.map((message) => ({
+        ...message,
+        authorImage: message.authorRole === "teacher"
+          ? teacherImages.get(String(message.authorId)) ?? null
+          : message.authorRole === "admin"
+            ? adminImages.get(String(message.authorId)) ?? null
+            : null,
+      })),
+    }));
+    res.json(jsonValue(rowsWithAuthorImages));
+  }),
+);
+
+app.get(
+  "/api/case-discussions",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const rows = await prisma.caseThread.findMany({
+      where: {
+        isClosed: false,
+        record: {
+          approvalStatus: "Approved",
+          ...(req.user!.role === "teacher"
+            ? { reportedByType: "teacher", reportedById: req.user!.id }
+            : {}),
+        },
+      },
+      include: {
+        record: { include: { student: true, violation: true } },
+        messages: {
+          orderBy: { createdAt: "asc" },
+          include: { replyTo: true },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+    const teacherIds = [...new Set(rows.flatMap((thread) =>
+      thread.messages.filter((message) => message.authorRole === "teacher").map((message) => message.authorId),
+    ))];
+    const adminIds = [...new Set(rows.flatMap((thread) =>
+      thread.messages.filter((message) => message.authorRole === "admin").map((message) => message.authorId),
+    ))];
+    const [teacherProfiles, adminProfiles] = await Promise.all([
+      teacherIds.length
+        ? prisma.teacher.findMany({ where: { id: { in: teacherIds } }, select: { id: true, image: true } })
+        : Promise.resolve([]),
+      adminIds.length
+        ? prisma.admin.findMany({ where: { id: { in: adminIds } }, select: { id: true, image: true } })
+        : Promise.resolve([]),
+    ]);
+    const teacherImages = new Map(teacherProfiles.map((teacher) => [String(teacher.id), teacher.image]));
+    const adminImages = new Map(adminProfiles.map((admin) => [String(admin.id), admin.image]));
+    const rowsWithAuthorImages = rows.map((thread) => ({
+      ...thread,
+      messages: thread.messages.map((message) => ({
+        ...message,
+        authorImage: message.authorRole === "teacher"
+          ? teacherImages.get(String(message.authorId)) ?? null
+          : message.authorRole === "admin"
+            ? adminImages.get(String(message.authorId)) ?? null
+            : null,
+      })),
+    }));
+    res.json(jsonValue(rowsWithAuthorImages));
+  }),
+);
+
+app.post(
+  "/api/case-discussions/:threadId/messages",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const threadId = toId(String(req.params.threadId));
+    const body = bodyObject(req.body);
+    const text = String(body.body ?? "").trim();
+    const attachmentUrl = body.attachmentUrl ? String(body.attachmentUrl) : null;
+    const attachmentName = body.attachmentName ? String(body.attachmentName).slice(0, 255) : null;
+    const audioUrl = body.audioUrl ? String(body.audioUrl) : null;
+    const replyToId = body.replyToId ? toId(String(body.replyToId)) : null;
+    if (!text && !attachmentUrl && !audioUrl) {
+      res.status(400).json({ error: "A message or attachment is required." });
+      return;
+    }
+    if (text.length > 10000) {
+      res.status(400).json({ error: "Messages must be 10,000 characters or fewer." });
+      return;
+    }
+    const thread = await prisma.caseThread.findUnique({
+      where: { id: threadId },
+      include: { record: { select: { approvalStatus: true, reportedById: true, reportedByType: true } } },
+    });
+    if (!thread || thread.isClosed || thread.record.approvalStatus !== "Approved") {
+      res.status(404).json({ error: "Approved case discussion not found." });
+      return;
+    }
+    if (replyToId) {
+      const repliedMessage = await prisma.caseMessage.findUnique({
+        where: { id: replyToId },
+        select: { id: true, threadId: true },
+      });
+      if (!repliedMessage || repliedMessage.threadId !== threadId) {
+        res.status(400).json({ error: "The reply target must belong to this case discussion." });
+        return;
+      }
+    }
+    if (
+      req.user!.role === "teacher" &&
+      (thread.record.reportedByType !== "teacher" || thread.record.reportedById !== req.user!.id)
+    ) {
+      res.status(403).json({ error: "You can only access discussions for cases you reported." });
+      return;
+    }
+    for (const [label, value] of [["Image", attachmentUrl], ["Audio", audioUrl]] as const) {
+      if (value && (!value.startsWith("data:") || value.length > maxImageBytes * 1.4)) {
+        res.status(400).json({ error: `${label} attachments must be valid data URLs under 4 MB.` });
+        return;
+      }
+    }
+    const message = await prisma.$transaction(async (tx) => {
+      const created = await tx.caseMessage.create({
+        data: {
+          threadId,
+          authorId: req.user!.id,
+          authorRole: req.user!.role,
+          authorName: req.user!.name,
+          authorPosition: req.user!.position,
+          body: text || null,
+          attachmentUrl,
+          attachmentName,
+          audioUrl,
+          replyToId,
+        },
+      });
+      await tx.caseThread.update({ where: { id: threadId }, data: { updatedAt: new Date() } });
+      return created;
+    });
+    publishCaseDiscussionEvent("discussion", thread.record, {
+      threadId: String(thread.id),
+      messageId: String(message.id),
+    });
+    res.status(201).json(jsonValue(message));
+  }),
+);
+
+const allowedCaseReactions = new Set(["👍", "❤️", "😂", "😮", "😢", "🎉"]);
+app.post(
+  "/api/case-discussions/:threadId/messages/:messageId/reactions",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const threadId = toId(String(req.params.threadId));
+    const messageId = toId(String(req.params.messageId));
+    const body = bodyObject(req.body);
+    const emoji = String(body.emoji ?? "");
+    if (!allowedCaseReactions.has(emoji)) {
+      res.status(400).json({ error: "Choose one of the available emoji reactions." });
+      return;
+    }
+    const thread = await prisma.caseThread.findUnique({
+      where: { id: threadId },
+      include: { record: { select: { approvalStatus: true, reportedById: true, reportedByType: true } } },
+    });
+    if (!thread || thread.isClosed || thread.record.approvalStatus !== "Approved") {
+      res.status(404).json({ error: "Approved case discussion not found." });
+      return;
+    }
+    if (req.user!.role === "teacher" && (thread.record.reportedByType !== "teacher" || thread.record.reportedById !== req.user!.id)) {
+      res.status(403).json({ error: "You can only react in discussions for cases you reported." });
+      return;
+    }
+    const message = await prisma.caseMessage.findFirst({ where: { id: messageId, threadId } });
+    if (!message) {
+      res.status(404).json({ error: "Message not found in this case discussion." });
+      return;
+    }
+    const existing = Array.isArray(message.reactions) ? message.reactions as Array<{ emoji?: unknown; userId?: unknown; role?: unknown; name?: unknown }> : [];
+    const userId = String(req.user!.id);
+    const isSameUserReaction = (reaction: { emoji?: unknown; userId?: unknown; role?: unknown }) =>
+      reaction.emoji === emoji && String(reaction.userId) === userId && reaction.role === req.user!.role;
+    const removing = existing.some(isSameUserReaction);
+    const nextReactions = existing.filter((reaction) => !isSameUserReaction(reaction));
+    if (!removing) nextReactions.push({ emoji, userId, role: req.user!.role, name: req.user!.name });
+    const updated = await prisma.caseMessage.update({
+      where: { id: messageId },
+      data: { reactions: nextReactions as Prisma.InputJsonValue },
+      select: { reactions: true },
+    });
+    await prisma.caseThread.update({ where: { id: threadId }, data: { updatedAt: new Date() } });
+    publishCaseDiscussionEvent("discussion", thread.record, { threadId: String(thread.id), messageId: String(messageId) });
+    res.json({ reactions: updated.reactions ?? [] });
+  }),
+);
+
+app.delete(
+  "/api/case-discussions/:threadId/messages/:messageId",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const threadId = toId(String(req.params.threadId));
+    const messageId = toId(String(req.params.messageId));
+    const message = await prisma.caseMessage.findFirst({
+      where: { id: messageId, threadId },
+      include: {
+        thread: {
+          include: {
+            record: { select: { approvalStatus: true, reportedById: true, reportedByType: true } },
+          },
+        },
+      },
+    });
+    if (!message || message.thread.isClosed || message.thread.record.approvalStatus !== "Approved") {
+      res.status(404).json({ error: "Approved case discussion message not found." });
+      return;
+    }
+    const canDeleteMessage = req.user!.role === "admin" ||
+      (message.authorId === req.user!.id && message.authorRole === req.user!.role);
+    if (!canDeleteMessage) {
+      res.status(403).json({ error: "You can only delete your own messages." });
+      return;
+    }
+    if (
+      req.user!.role === "teacher" &&
+      (message.thread.record.reportedByType !== "teacher" || message.thread.record.reportedById !== req.user!.id)
+    ) {
+      res.status(403).json({ error: "You can only access discussions for cases you reported." });
+      return;
+    }
+    await prisma.caseMessage.delete({ where: { id: messageId } });
+    await prisma.caseThread.update({ where: { id: threadId }, data: { updatedAt: new Date() } });
+    publishCaseDiscussionEvent("discussion", message.thread.record, {
+      threadId: String(threadId),
+      messageId: String(messageId),
+    });
+    res.json({ success: true });
+  }),
+);
+
 app.get(
   "/api/records",
   requireAuth,
@@ -989,19 +1600,11 @@ app.post(
       res.status(400).json({ error: "Selected student does not exist." });
       return;
     }
-    if (
-      req.user!.role === "teacher" &&
-      req.user!.adviserSection &&
-      (student.grade.toLowerCase() !== req.user!.adviserSection.grade.toLowerCase() ||
-        student.section.toLowerCase() !== req.user!.adviserSection.section.toLowerCase())
-    ) {
-      res.status(403).json({ error: "You can only report incidents for your assigned section." });
-      return;
-    }
     const isTeacher = req.user!.role === "teacher";
-    const requestedStatus = String(
+    const requestedStatusValue = String(
       body.status ?? (isTeacher ? "Under Approval" : "Pending"),
     );
+    const requestedStatus = requestedStatusValue;
     const requestedApproval = String(
       body.approvalStatus ??
         body.approval_status ??
@@ -1011,7 +1614,7 @@ app.post(
       res.status(400).json({ error: "The requested record status is invalid." });
       return;
     }
-    if (!["Under Approval", "Approved", "Rejected"].includes(requestedApproval)) {
+    if (!["Under Approval", "Approved", "Rejected", "Not Required"].includes(requestedApproval)) {
       res.status(400).json({ error: "The requested approval status is invalid." });
       return;
     }
@@ -1031,15 +1634,13 @@ app.post(
           reportedByName: req.user!.name,
           dateReported: parsedDateReported,
           status: isTeacher ? "Under Approval" : requestedStatus,
-          approvalStatus: isTeacher ? "Under Approval" : requestedApproval,
-          approvedBy:
-            !isTeacher && requestedApproval === "Approved"
-              ? req.user!.name
-              : null,
-          approvedAt:
-            !isTeacher && requestedApproval === "Approved"
-              ? new Date()
-              : null,
+          approvalStatus: isTeacher
+            ? "Under Approval"
+            : requestedApproval === "Under Approval"
+              ? "Under Approval"
+              : "Not Required",
+          approvedBy: null,
+          approvedAt: null,
           rejectedBy:
             !isTeacher && requestedApproval === "Rejected"
               ? req.user!.name
@@ -1082,11 +1683,36 @@ app.patch(
       "rejectedAt", "rejectionReason", "sanction", "remarks", "resolutionNotes",
       "resolutionDate", "smsNotified",
     ]);
-    const record = await prisma.record.update({
-      where: { id: toId(String(req.params.id)) },
-      data: fields as Prisma.RecordUpdateInput,
-      include: { student: true, violation: true },
+    let approvedThreadId: bigint | null = null;
+    const record = await prisma.$transaction(async (tx) => {
+      const id = toId(String(req.params.id));
+      const existing = await tx.record.findUnique({
+        where: { id },
+        select: { reportedByType: true, approvalStatus: true, status: true },
+      });
+      if (!existing) {
+        throw Object.assign(new Error("The requested record was not found."), { status: 404 });
+      }
+      const isTeacherReport = existing.reportedByType === "teacher";
+      const isExplicitlyQueued = existing.approvalStatus === "Under Approval" ||
+        (!isTeacherReport && existing.status === "Under Approval" && existing.approvalStatus === "Not Required");
+      const updateData = isTeacherReport || isExplicitlyQueued
+        ? fields
+        : { ...fields, approvalStatus: "Not Required", approvedBy: null, approvedAt: null };
+      const updated = await tx.record.update({
+        where: { id },
+        data: updateData as Prisma.RecordUpdateInput,
+        include: { student: true, violation: true },
+      });
+      if (isTeacherReport && updated.approvalStatus === "Approved") {
+        const thread = await ensureCaseThread(tx, updated.id);
+        approvedThreadId = thread.id;
+      }
+      return updated;
     });
+    if (approvedThreadId !== null) {
+      publishCaseDiscussionEvent("discussion", record, { threadId: String(approvedThreadId) });
+    }
     res.json(
       jsonValue({ ...record, students: record.student, violations: record.violation }),
     );
@@ -1108,7 +1734,7 @@ app.get(
   requireAuth,
   asyncRoute(async (_req, res) => {
     const rows = await prisma.teacher.findMany({
-      select: { id: true, fname: true, mname: true, lname: true, email: true, position: true, department: true, specialization: true, contact: true, gender: true, image: true },
+      select: { id: true, fname: true, mname: true, lname: true, email: true, position: true, department: true, specialization: true, contact: true, gender: true, image: true, twoFactorEnabled: true },
       orderBy: { lname: "asc" },
     });
     res.json(jsonValue(rows));
@@ -1197,7 +1823,7 @@ app.get(
   requireAdmin,
   asyncRoute(async (_req, res) => {
     const rows = await prisma.admin.findMany({
-      select: { id: true, fname: true, mname: true, lname: true, email: true, role: true, position: true, contact: true, image: true },
+      select: { id: true, fname: true, mname: true, lname: true, email: true, role: true, position: true, contact: true, image: true, twoFactorEnabled: true },
     });
     res.json(jsonValue(rows));
   }),
@@ -1264,6 +1890,36 @@ app.patch(
       ? await prisma.admin.update({ where: { id: toId(targetId) }, data: data as Prisma.AdminUpdateInput })
       : await prisma.admin.update({ where: { email: targetId }, data: data as Prisma.AdminUpdateInput });
     res.json(jsonValue({ ...row, password: undefined }));
+  }),
+);
+
+app.delete(
+  "/api/admins/:id/two-factor",
+  requireAuth,
+  requireAdmin,
+  asyncRoute(async (req, res) => {
+    const targetId = String(req.params.id);
+    const where = /^\d+$/.test(targetId)
+      ? { id: toId(targetId) }
+      : { email: targetId };
+    const admin = await prisma.admin.findUnique({ where, select: { id: true, email: true, twoFactorEnabled: true } });
+    if (!admin) {
+      res.status(404).json({ error: "The administrator was not found." });
+      return;
+    }
+    await prisma.$transaction([
+      prisma.admin.update({ where: { id: admin.id }, data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorRecoveryCodes: null } }),
+      prisma.activityLog.create({
+        data: {
+          userName: req.user!.name,
+          userRole: req.user!.role,
+          action: "Remove Admin Two-Factor Authentication",
+          details: `Removed two-factor authentication for administrator ${admin.email}.`,
+          ipAddress: req.ip,
+        },
+      }),
+    ]);
+    res.json({ ok: true });
   }),
 );
 

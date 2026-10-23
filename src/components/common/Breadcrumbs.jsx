@@ -5,6 +5,9 @@ import { Link, useLocation } from 'react-router-dom';
 const LABELS = {
   students: 'Students',
   violations: 'Violations',
+  'case-discussion': 'Case Discussion',
+  'closed-case-chats': 'Closed Chats',
+  'admin-dashboard': 'Admin Dashboard',
   teachers: 'Teachers',
   advisers: 'Advisers',
   'student-violation': 'Student details',

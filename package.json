@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n API,WEB,LANGUAGETOOL \"npm:server:dev\" \"vite\" \"npm:languagetool:dev\"",
-    "languagetool:dev": "java -cp \"LanguageTool/*;LanguageTool/libs/*\" org.languagetool.server.HTTPServer --port 8010",
-    "build": "vite build",
-    "build:server": "tsc -p server/tsconfig.json",
+    "languagetool:dev": "node scripts/start-languagetool.mjs",
+    "build": "prisma generate && vite build",
+    "build:server": "prisma generate && tsc -p server/tsconfig.json",
     "lint": "oxlint",
     "test": "vitest run",
     "server:dev": "tsx watch server/index.ts",
@@ -30,7 +30,8 @@
     "@capacitor/share": "^8.0.3",
     "@capacitor/status-bar": "^8.0.3",
     "@capgo/capacitor-printer": "^8.1.8",
-    "@prisma/client": "^6.19.0",
+    "@prisma/adapter-mariadb": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
     "cookie-parser": "^1.4.7",
@@ -38,11 +39,14 @@
     "dotenv": "^18.0.7",
     "exceljs": "^4.4.0",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.48.0",
+    "mariadb": "^3.5.4",
     "pdfjs-dist": "^6.4.299",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
@@ -61,7 +65,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "concurrently": "^10.0.6",
     "oxlint": "^1.81.0",
-    "prisma": "^6.19.0",
+    "prisma": "^7.10.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vite": "^8.3.0",
@@ -71,8 +75,8 @@
     "uuid": "^11.1.1"
   },
   "allowScripts": {
-    "@prisma/client@6.19.3": true,
-    "@prisma/engines@6.19.3": true,
-    "prisma@6.19.3": true
+    "@prisma/client@7.10.1": true,
+    "@prisma/engines@7.10.1": true,
+    "prisma@7.10.1": true
   }
 }

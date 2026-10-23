@@ -165,7 +165,7 @@
 
 [data-theme="dark"] .school-cal-cat-chip.active {
   background: #ffffff !important;
-  border-color: #ffffff !important;
+  border-color: #737373 !important;
   color: #080808 !important;
 }
 
@@ -176,24 +176,24 @@
 
 [data-theme="dark"] .school-cal-day-cell {
   background: #080808 !important;
-  border-color: #242424 !important;
+  border-color: #3a3a3a !important;
   color: #ffffff !important;
 }
 
 [data-theme="dark"] .school-cal-day-cell:hover {
   background: #161616 !important;
-  border-color: #ffffff !important;
+  border-color: #8a8a8a !important;
 }
 
 [data-theme="dark"] .school-cal-day-cell.is-selected {
   background: #ffffff !important;
-  border-color: #ffffff !important;
+  border-color: #8a8a8a !important;
   color: #080808 !important;
   box-shadow: none !important;
 }
 
 [data-theme="dark"] .school-cal-day-cell.is-today:not(.is-selected) {
-  border-color: #ffffff !important;
+  border-color: #a3a3a3 !important;
   color: #ffffff !important;
 }
 

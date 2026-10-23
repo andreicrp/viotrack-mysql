@@ -35,6 +35,250 @@
     width: 100%;
 }
 
+@media (max-width: 480px) {
+    .student-violation-detail-page .student-qr-pass-backdrop {
+        padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px)) !important;
+        overflow-y: auto;
+    }
+
+    .student-violation-detail-page .student-qr-pass-modal {
+        width: 100% !important;
+        max-width: 380px !important;
+        max-height: calc(100dvh - 24px) !important;
+        overflow-y: auto !important;
+        padding: 17px !important;
+        gap: 12px !important;
+        border-radius: 18px !important;
+        box-sizing: border-box;
+    }
+
+    .student-violation-detail-page .student-qr-pass-header {
+        padding-bottom: 9px !important;
+    }
+
+    .student-violation-detail-page .student-qr-pass-header h4 {
+        font-size: 15px !important;
+        line-height: 1.3;
+    }
+
+    .student-violation-detail-page .student-qr-pass-modal .printable-qr-card {
+        padding: 15px 12px !important;
+        border-radius: 14px !important;
+    }
+
+    .student-violation-detail-page .student-qr-pass-code {
+        width: 156px !important;
+        height: 156px !important;
+    }
+
+    .student-violation-detail-page .student-qr-pass-actions {
+        gap: 8px !important;
+        margin-top: 0 !important;
+    }
+
+    .student-violation-detail-page .student-qr-pass-actions button {
+        min-height: 42px;
+        padding: 9px 10px !important;
+        font-size: 12px !important;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-backdrop {
+        align-items: center !important;
+        justify-content: center !important;
+        padding: max(10px, env(safe-area-inset-top, 0px)) 10px max(10px, env(safe-area-inset-bottom, 0px)) !important;
+        overflow-y: auto;
+        backdrop-filter: blur(2px) !important;
+        -webkit-backdrop-filter: blur(2px) !important;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-modal {
+        width: 100% !important;
+        max-width: 420px !important;
+        max-height: calc(100dvh - 20px) !important;
+        overflow-y: auto !important;
+        padding: 16px !important;
+        gap: 12px !important;
+        border-radius: 16px !important;
+        box-sizing: border-box;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-header {
+        align-items: flex-start !important;
+        gap: 10px !important;
+        padding-bottom: 10px !important;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-title {
+        font-size: 16px !important;
+        line-height: 1.25 !important;
+        padding-right: 2px;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-subtitle {
+        font-size: 11px !important;
+        line-height: 1.35 !important;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-close {
+        width: 30px !important;
+        height: 30px !important;
+        flex: 0 0 auto;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-modal form {
+        gap: 12px !important;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-recipient {
+        padding: 10px 11px !important;
+        gap: 8px !important;
+        font-size: 11.5px !important;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-recipient-row {
+        display: grid !important;
+        grid-template-columns: minmax(88px, 0.7fr) minmax(0, 1.3fr);
+        align-items: start !important;
+        gap: 8px !important;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-recipient-row > :last-child {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        text-align: right;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-recipient-row > div:last-child {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 4px !important;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-category {
+        min-height: 42px;
+        padding: 7px 8px !important;
+        line-height: 1.25;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-textarea {
+        min-height: 96px;
+        max-height: 140px;
+        padding: 10px 11px !important;
+        font-size: 14px !important;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-helper {
+        font-size: 10px !important;
+        line-height: 1.3;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-modal form > div:last-child {
+        gap: 8px !important;
+        margin-top: 0 !important;
+    }
+
+    .student-violation-detail-page .sms-guardian-notice-cancel,
+    .student-violation-detail-page .sms-guardian-notice-submit {
+        min-height: 42px;
+        justify-content: center;
+        padding: 9px 12px !important;
+        font-size: 12px !important;
+    }
+
+    .student-violation-detail-page .student-violation-record-card {
+        padding: 12px !important;
+        border-radius: 14px !important;
+    }
+
+    .student-violation-detail-page .student-violation-record-card > div:first-child {
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+        padding-bottom: 9px !important;
+    }
+
+    .student-violation-detail-page .student-violation-record-card h3 {
+        font-size: 15px !important;
+        line-height: 1.25 !important;
+    }
+
+    .student-violation-detail-page .student-violation-record-card p {
+        font-size: 12px !important;
+        line-height: 1.35 !important;
+    }
+
+    .student-violation-detail-page .student-record-toolbar {
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .student-violation-detail-page .student-record-toolbar-right {
+        gap: 7px !important;
+    }
+
+    .student-violation-detail-page .student-violation-record-cards {
+        gap: 9px !important;
+        padding: 8px 0 !important;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card {
+        padding: 12px !important;
+        gap: 10px !important;
+        border-radius: 13px !important;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card > div:first-child {
+        gap: 8px !important;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card > div:first-child > div:first-child {
+        gap: 8px !important;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card input[type="checkbox"] {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card h3 {
+        font-size: 14px !important;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card .violation-list-offense-panel {
+        padding: 11px 12px !important;
+        gap: 10px !important;
+        border-radius: 11px !important;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card .violation-conference-subcard {
+        padding: 9px 10px !important;
+        gap: 8px !important;
+        border-radius: 10px !important;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card .violation-conference-title {
+        font-size: 12px !important;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card .violation-list-mobile-actions {
+        gap: 7px !important;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card .violation-list-mobile-actions button {
+        height: 38px !important;
+        font-size: 12px !important;
+        gap: 8px !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+        white-space: nowrap;
+    }
+
+    .student-violation-detail-page .student-violation-mobile-card .violation-list-mobile-actions button > svg {
+        width: 15px;
+        height: 15px;
+        flex: 0 0 auto;
+    }
+}
+
 .violations-page .responsive-cards-mobile.list-view .violation-list-mobile-card {
     width: 100%;
     min-width: 0;
@@ -1999,5 +2243,261 @@ html[data-theme="dark"] body .responsive-cards-mobile.grid-view .entity-grid-act
 
   .admin-users-mobile-cards.grid-view .entity-grid-actions > button.is-delete {
     flex-basis: auto !important;
+  }
+}
+/* Compact mobile filter hierarchy for the violations list */
+.violation-student-avatar-top {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .violation-student-avatar-top {
+    display: inline-flex !important;
+    width: 38px !important;
+    height: 38px !important;
+    flex: 0 0 38px !important;
+  }
+
+  .violation-student-summary-row > div {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .violations-mobile-filter-grid {
+    gap: 7px !important;
+  }
+
+  .violations-mobile-filter-grid .violations-primary-filter .custom-select-trigger {
+    min-height: 40px !important;
+    padding: 7px 9px !important;
+    gap: 5px !important;
+    border-radius: 9px !important;
+    font-size: 12px !important;
+  }
+
+  .violations-mobile-filter-grid .mobile-filter-more-toggle {
+    min-height: 38px;
+    justify-content: flex-start;
+    padding: 7px 10px;
+    font-size: 11.5px;
+  }
+
+  .violations-mobile-filter-grid .mobile-filter-chevron {
+    margin-left: auto;
+  }
+
+  .violations-mobile-filter-grid .mobile-filter-more {
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .violations-mobile-filter-grid .mobile-filter-more .custom-select-trigger {
+    min-height: 38px;
+    padding: 6px 8px;
+    font-size: 11.5px;
+  }
+
+  .violations-mobile-filter-grid .mobile-view-mode-row {
+    min-height: 38px;
+    margin-top: 1px;
+    padding-top: 7px;
+    border-top: 1px solid var(--border-subtle, #e2e8f0);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .violations-mobile-filter-grid .mobile-view-mode-row .view-mode-toggle {
+    padding: 3px;
+    border-radius: 10px;
+  }
+}
+
+.violations-mobile-filter-grid .mobile-filter-more {
+  display: contents;
+}
+
+@media (max-width: 480px) {
+  .violations-page .responsive-cards-mobile.list-view .violation-list-mobile-card {
+    padding: 9px 10px !important;
+    gap: 6px !important;
+    border-radius: 14px !important;
+  }
+
+  .violations-page .violation-list-mobile-card > div:first-child {
+    gap: 7px !important;
+  }
+
+  .violations-page .violation-list-mobile-card > div:first-child h3 {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  .violations-page .violation-list-mobile-card .violation-severity-pill {
+    padding: 3px 9px !important;
+    font-size: 10px !important;
+  }
+
+  .violations-page .violation-list-mobile-card .violation-list-offense-panel {
+    gap: 6px !important;
+    padding: 8px 9px !important;
+    border-radius: 9px !important;
+  }
+
+  .violations-page .violation-list-mobile-card .violation-list-offense-panel > div:not(.violation-conference-subcard) {
+    gap: 8px !important;
+  }
+
+  .violations-page .violation-student-summary-row {
+    gap: 6px !important;
+  }
+
+  .violations-page .violation-student-avatar-top {
+    width: 34px !important;
+    height: 34px !important;
+    flex-basis: 34px !important;
+    font-size: 11px !important;
+  }
+
+  .violations-page .violation-list-offense-panel .violation-detail-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .violations-page .violation-list-offense-panel .violation-detail-value {
+    font-size: 11.5px !important;
+    line-height: 1.25;
+  }
+
+  .violations-page .violation-list-offense-panel .violation-detail-label {
+    font-size: 9px !important;
+    line-height: 1.1;
+  }
+
+  .violations-page .violation-list-offense-panel .violation-student-meta {
+    font-size: 10px !important;
+  }
+
+  .violations-page .violation-list-mobile-card .violation-conference-subcard {
+    gap: 8px !important;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+  }
+
+  .violations-page .violation-list-mobile-card .violation-conference-subcard > div {
+    gap: 8px !important;
+  }
+
+  .violations-page .violation-list-mobile-card .violation-conference-title {
+    font-size: 11.5px !important;
+  }
+
+  .violations-page .violation-list-mobile-card .violation-conference-date {
+    font-size: 9px !important;
+  }
+
+  .violations-page .violation-list-mobile-card .violation-list-mobile-actions {
+    gap: 6px !important;
+  }
+
+  .violations-page .violation-list-mobile-card .violation-list-action-btn {
+    height: 34px !important;
+    min-height: 34px !important;
+    font-size: 10.5px !important;
+  }
+
+  .violations-page .violation-list-mobile-card .mobile-delete-button {
+    height: 34px !important;
+  }
+}
+
+.violations-mobile-filter-grid .mobile-filter-more-toggle {
+  display: none;
+}
+
+.violations-mobile-filter-grid .mobile-view-mode-row {
+  display: contents;
+}
+
+.violations-mobile-filter-grid .mobile-view-mode-row > span {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .violations-mobile-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: stretch;
+  }
+
+  .violations-mobile-filter-grid .mobile-filter-more-toggle {
+    display: inline-flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 12px;
+    color: var(--text-primary, #0f172a);
+    background: var(--bg-surface, #ffffff);
+    border: 1px solid var(--border-subtle, #cbd5e1);
+    border-radius: 9px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .mobile-filter-active-count {
+    display: inline-grid;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    place-items: center;
+    color: #fff;
+    background: var(--brand-blue, #07345f);
+    border-radius: 999px;
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  .mobile-filter-chevron {
+    margin-left: auto;
+    transition: transform 0.16s ease;
+  }
+
+  .mobile-filter-chevron.is-open {
+    transform: rotate(180deg);
+  }
+
+  .violations-mobile-filter-grid .mobile-filter-more {
+    display: none;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    background: var(--bg-input, #f8fafc);
+    border: 1px solid var(--border-subtle, #e2e8f0);
+    border-radius: 10px;
+  }
+
+  .violations-mobile-filter-grid .mobile-filter-more.is-open {
+    display: grid;
+  }
+
+  .violations-mobile-filter-grid .mobile-view-mode-row {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 36px;
+    padding-top: 2px;
+    color: var(--text-muted, #64748b);
+    font-size: 11px;
+  }
+
+  .violations-mobile-filter-grid .mobile-view-mode-row > span {
+    display: inline;
   }
 }

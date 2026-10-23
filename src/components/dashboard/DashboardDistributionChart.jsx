@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Cell,
   Pie,
@@ -14,6 +14,7 @@ export const DashboardDistributionChart = ({
   setSelectedPieSlice,
   setHoveredPieSlice
 }) => {
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const maxValue = Math.max(
     ...violationDistribution.map(item => Math.max(0, Number(item.value) || 0)),
     1
@@ -43,8 +44,8 @@ export const DashboardDistributionChart = ({
               data={violationDistribution}
               cx="50%"
               cy="50%"
-              outerRadius={92}
-              innerRadius={50}
+              outerRadius="92%"
+              innerRadius="54%"
               paddingAngle={2}
               dataKey="value"
               nameKey="name"
@@ -99,7 +100,10 @@ export const DashboardDistributionChart = ({
         </ResponsiveContainer>
       </div>
 
-      <div className="dash-distribution-list">
+      <div
+        className={`dash-distribution-list${showAllCategories ? ' is-expanded' : ''}`}
+        id="dashboard-violation-category-list"
+      >
         {violationDistribution.map((item, index) => {
           const incidentCount = Math.max(0, Number(item.value) || 0);
           const barWidth = incidentCount > 0
@@ -110,6 +114,7 @@ export const DashboardDistributionChart = ({
               key={`${item.name}-${index}`}
               type="button"
               className="dash-distribution-item"
+              aria-label={`${item.name}: ${item.value} ${item.value === 1 ? 'incident' : 'incidents'}`}
               aria-pressed={selectedPieSlice?.name === item.name}
               style={{ '--dist-color': item.color }}
               onMouseEnter={() => setHoveredPieSlice(item.name)}
@@ -145,6 +150,17 @@ export const DashboardDistributionChart = ({
           );
         })}
       </div>
+      {violationDistribution.length > 3 && (
+        <button
+          type="button"
+          className="dash-distribution-more"
+          onClick={() => setShowAllCategories(value => !value)}
+          aria-expanded={showAllCategories}
+          aria-controls="dashboard-violation-category-list"
+        >
+          {showAllCategories ? 'Show fewer categories' : `Show all ${violationDistribution.length} categories`}
+        </button>
+      )}
     </div>
   );
 };

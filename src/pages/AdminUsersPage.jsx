@@ -11,10 +11,9 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  ShieldOff,
   UserPlus,
   Search,
-  Upload,
-  FileSpreadsheet,
   Trash2,
   Edit3,
   ArrowUpDown,
@@ -23,6 +22,7 @@ import {
   X,
   Lock,
   Mail,
+  Phone,
   User,
   Save,
   CheckCircle2,
@@ -36,8 +36,9 @@ import {
 } from 'lucide-react';
 import { getJsPDF } from '../utils/pdfHelper';
 import { SaveAsModal } from '../components/common/SaveAsModal';
+import { ImportFormatDropdown } from '../components/common/ImportFormatDropdown';
 import { validateUploadedFile } from '../utils/security';
-import { getStudentPhoto } from '../utils/studentPhoto';
+import { getAdminProfilePhoto } from '../utils/studentPhoto';
 
 export const AdminUsersPage = () => {
   const { success, error, info } = useNotification();
@@ -61,7 +62,7 @@ export const AdminUsersPage = () => {
       email: 'admin@phcmanila.edu.ph',
       role: 'Head Admin',
       position: 'Head of Student Affairs',
-      image: '/images/phcm-logo2.png'
+      image: ''
     },
     {
       id: 2,
@@ -85,6 +86,9 @@ export const AdminUsersPage = () => {
     }
   ]);
   const [loading, setLoading] = useState(false);
+  const [removingTwoFactorIds, setRemovingTwoFactorIds] = useState([]);
+  const [pendingAdminAction, setPendingAdminAction] = useState(null);
+  const [isConfirmingAdminAction, setIsConfirmingAdminAction] = useState(false);
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
@@ -183,19 +187,73 @@ export const AdminUsersPage = () => {
     }
   };
 
-  const handleDeleteSingle = async (id, name) => {
-    if (window.confirm(`Are you sure you want to remove admin user: "${name}"?`)) {
-      try {
-        await dataService.deleteAdmin(id);
-        setAdminUsers(prev => prev.filter(a => String(a.id) !== String(id)));
-        setSelectedIds(prev => prev.filter(x => String(x) !== String(id)));
+  const handleDeleteSingle = (id, name) => {
+    setPendingAdminAction({ type: 'delete', id, name });
+  };
+
+  const handleRemoveTwoFactor = (admin) => {
+    const name = `${admin.fname || ''} ${admin.lname || ''}`.trim() || admin.email;
+    setPendingAdminAction({ type: 'remove-2fa', admin, id: admin.id, name });
+  };
+
+  const handleConfirmAdminAction = async () => {
+    if (!pendingAdminAction || isConfirmingAdminAction) return;
+    setIsConfirmingAdminAction(true);
+    if (pendingAdminAction.type === 'remove-2fa') {
+      setRemovingTwoFactorIds(prev => [...prev, String(pendingAdminAction.id)]);
+    }
+    try {
+      if (pendingAdminAction.type === 'remove-2fa') {
+        await dataService.removeAdminTwoFactor(pendingAdminAction.id);
+        setAdminUsers(prev => prev.map(item => String(item.id) === String(pendingAdminAction.id)
+          ? { ...item, twoFactorEnabled: false }
+          : item));
+        success(`Two-factor authentication removed for ${pendingAdminAction.name}.`);
+      } else {
+        await dataService.deleteAdmin(pendingAdminAction.id);
+        setAdminUsers(prev => prev.filter(a => String(a.id) !== String(pendingAdminAction.id)));
+        setSelectedIds(prev => prev.filter(id => String(id) !== String(pendingAdminAction.id)));
         success('Administrator removed successfully.');
         loadAdmins();
-      } catch (err) {
-        error('Failed to remove administrator: ' + err.message);
       }
+    } catch (err) {
+      error(pendingAdminAction.type === 'remove-2fa'
+        ? `Could not remove two-factor authentication: ${err.message}`
+        : `Failed to remove administrator: ${err.message}`);
+    } finally {
+      if (pendingAdminAction.type === 'remove-2fa') {
+        setRemovingTwoFactorIds(prev => prev.filter(id => id !== String(pendingAdminAction.id)));
+      }
+      setIsConfirmingAdminAction(false);
+      setPendingAdminAction(null);
     }
   };
+
+  const renderTwoFactorResetButton = (admin, compact = false) => (
+    <button
+      type="button"
+      onClick={() => handleRemoveTwoFactor(admin)}
+      disabled={removingTwoFactorIds.includes(String(admin.id))}
+      title="Remove two-factor authentication"
+      aria-label={`Remove two-factor authentication for ${admin.email}`}
+      style={{
+        background: 'var(--bg-surface-elevated, #fff7ed)',
+        color: '#c2410c',
+        border: '1px solid #fed7aa',
+        padding: compact ? '6px 9px' : '6px 10px',
+        borderRadius: '7px',
+        fontSize: compact ? '11px' : '12px',
+        fontWeight: 700,
+        cursor: removingTwoFactorIds.includes(String(admin.id)) ? 'wait' : 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '5px',
+        opacity: removingTwoFactorIds.includes(String(admin.id)) ? 0.65 : 1,
+      }}
+    >
+      <ShieldOff size={compact ? 12 : 13} /> {removingTwoFactorIds.includes(String(admin.id)) ? 'Removing…' : 'Remove 2FA'}
+    </button>
+  );
 
   const handleRemoveAdmin = handleDeleteSingle;
 
@@ -450,52 +508,30 @@ export const AdminUsersPage = () => {
 
         {/* Header Action Buttons */}
         <div className="page-banner-actions">
-          <div className="page-banner-secondary-group">
-            <button
-              onClick={() => handleOpenExportSaveAs('pdf')}
-              className="page-banner-btn-secondary"
-              title="Save As formatted PDF administrator roster"
-            >
-              <Download size={14} strokeWidth={2.2} /> Export PDF
-            </button>
-
-            <button
-              onClick={() => handleOpenExportSaveAs('csv')}
-              className="page-banner-btn-secondary"
-              title="Save As CSV / Excel spreadsheet"
-            >
-              <FileSpreadsheet size={14} strokeWidth={2.2} /> Export CSV
-            </button>
-
-            <button
-              onClick={() => {
-                setBulkImportFormat('pdf');
-                setIsBulkImportOpen(true);
-              }}
-              className="page-banner-btn-secondary"
-              title="Import administrators from PDF document"
-            >
-              <Upload size={14} strokeWidth={2.2} /> Import PDF
-            </button>
-
-            <button
-              onClick={() => {
-                setBulkImportFormat('csv');
-                setIsBulkImportOpen(true);
-              }}
-              className="page-banner-btn-secondary"
-              title="Import administrators from CSV spreadsheet"
-            >
-              <Upload size={14} strokeWidth={2.2} /> Import CSV
-            </button>
-          </div>
-
           <button
             onClick={handleOpenAdd}
             className="page-banner-primary-btn"
           >
             <Plus size={16} strokeWidth={2.5} /> Add Admin User
           </button>
+
+          <div className="page-banner-secondary-group">
+            <button
+              onClick={() => handleOpenExportSaveAs('csv')}
+              className="page-banner-btn-secondary"
+              title="Export administrator roster as CSV, Excel, or PDF"
+            >
+              <Download size={14} strokeWidth={2.2} /> Export
+            </button>
+
+            <ImportFormatDropdown
+              title="Choose a format to import administrators"
+              onSelect={(format) => {
+                setBulkImportFormat(format);
+                setIsBulkImportOpen(true);
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -792,6 +828,7 @@ export const AdminUsersPage = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <StudentInitialsAvatar
                             student={admin}
+                            allowAdminProfilePhoto
                             style={{
                               width: 40,
                               height: 40,
@@ -835,12 +872,17 @@ export const AdminUsersPage = () => {
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary, #334155)' }}>
                           <Mail size={14} color="var(--text-muted, #94a3b8)" />
                           <span>{admin.email}</span>
+                          <span aria-label={`2FA: ${admin.twoFactorEnabled ? 'Enabled' : 'Disabled'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginLeft: '8px', padding: '3px 7px', borderRadius: '999px', color: admin.twoFactorEnabled ? '#15803d' : '#64748b', background: admin.twoFactorEnabled ? '#f0fdf4' : '#f1f5f9', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                            {admin.twoFactorEnabled ? <ShieldCheck size={12} /> : <ShieldOff size={12} />}
+                            2FA: {admin.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                          </span>
                         </div>
                       </td>
 
                       {/* Actions */}
                       <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                          {renderTwoFactorResetButton(admin)}
                           <button
                             onClick={() => handleOpenEdit(admin)}
                             style={{
@@ -943,6 +985,7 @@ export const AdminUsersPage = () => {
                   {/* Center Avatar & Info */}
                   <StudentInitialsAvatar
                     student={admin}
+                    allowAdminProfilePhoto
                     className="entity-grid-avatar"
                     style={{
                       background: isSuper ? 'linear-gradient(135deg, #7c3aed 0%, #581c87 100%)' : 'linear-gradient(135deg, #07345f 0%, #0b192c 100%)',
@@ -961,10 +1004,15 @@ export const AdminUsersPage = () => {
                     <div className="entity-grid-meta-secondary" style={{ color: '#64748b', fontSize: '9.5px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {admin.email}
                     </div>
+                    <span aria-label={`2FA: ${admin.twoFactorEnabled ? 'Enabled' : 'Disabled'}`} style={{ display: 'inline-flex', alignItems: 'center', alignSelf: 'flex-start', gap: '4px', marginTop: '4px', padding: '3px 7px', borderRadius: '999px', color: admin.twoFactorEnabled ? '#15803d' : '#64748b', background: admin.twoFactorEnabled ? '#f0fdf4' : '#f1f5f9', fontSize: '10px', fontWeight: 700 }}>
+                      {admin.twoFactorEnabled ? <ShieldCheck size={11} /> : <ShieldOff size={11} />}
+                      2FA: {admin.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                    </span>
                   </div>
 
                   {/* Actions Row */}
                   <div className="entity-grid-actions">
+                    {renderTwoFactorResetButton(admin, true)}
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(admin)}
@@ -1019,6 +1067,7 @@ export const AdminUsersPage = () => {
                       />
                       <StudentInitialsAvatar
                         student={admin}
+                        allowAdminProfilePhoto
                         style={{
                           width: 38,
                           height: 38,
@@ -1031,7 +1080,7 @@ export const AdminUsersPage = () => {
                           {fullName}
                         </div>
                         <div className="admin-mobile-list-position" style={{ fontSize: '11.5px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {admin.position || 'Discipline & Admin Personnel'}
+                          Admin ID: {admin.id} • {admin.position || 'Discipline & Admin Personnel'}
                         </div>
                       </div>
                     </div>
@@ -1054,13 +1103,40 @@ export const AdminUsersPage = () => {
                   </div>
 
                   {/* Middle Row: Email */}
-                  <div className="admin-mobile-list-email" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#475569', background: '#f8fafc', padding: '6px 10px', borderRadius: '8px' }}>
-                    <Mail size={13} color="#94a3b8" />
-                    <span style={{ wordBreak: 'break-all' }}>{admin.email}</span>
+                  <div className="student-directory-list-details admin-directory-list-details">
+                    <div className="student-directory-list-detail">
+                      <User size={18} aria-hidden="true" />
+                      <div>
+                        <span className="student-directory-list-label">Position</span>
+                        <strong>{admin.position || 'Discipline & Admin Personnel'}</strong>
+                      </div>
+                    </div>
+                    <div className="student-directory-list-detail">
+                      <Mail size={18} aria-hidden="true" />
+                      <div>
+                        <span className="student-directory-list-label">Institutional email</span>
+                        <strong>{admin.email || 'No email listed'}</strong>
+                      </div>
+                    </div>
+                    <div className="student-directory-list-detail">
+                      <Phone size={18} aria-hidden="true" />
+                      <div>
+                        <span className="student-directory-list-label">Contact</span>
+                        <strong>{admin.contact || 'Not listed'}</strong>
+                      </div>
+                    </div>
+                    <div className="student-directory-list-detail">
+                      {admin.twoFactorEnabled ? <ShieldCheck size={18} aria-hidden="true" /> : <ShieldOff size={18} aria-hidden="true" />}
+                      <div>
+                        <span className="student-directory-list-label">Two-factor authentication</span>
+                        <strong style={{ color: admin.twoFactorEnabled ? '#15803d' : '#64748b' }}>{admin.twoFactorEnabled ? 'Enabled' : 'Disabled'}</strong>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Actions Row */}
-                  <div className="admin-mobile-list-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '4px', borderTop: '1px solid #f1f5f9' }}>
+                  <div className="admin-mobile-list-actions student-directory-list-actions" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', paddingTop: '6px', borderTop: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+                    {renderTwoFactorResetButton(admin, true)}
                     <button
                       onClick={() => handleOpenEdit(admin)}
                       className="admin-mobile-action"
@@ -1192,7 +1268,7 @@ export const AdminUsersPage = () => {
             <form onSubmit={handleSubmit}>
               <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--bg-surface-elevated, #f8fafc)', borderRadius: '12px', border: '1px solid var(--border-subtle, #e2e8f0)' }}>
-                  {getStudentPhoto(formData.image) && failedPreviewImage !== formData.image ? (
+                  {getAdminProfilePhoto(formData.image) && failedPreviewImage !== formData.image ? (
                     <img
                       src={formData.image}
                       alt={`${formData.fname} ${formData.lname}`}
@@ -1202,6 +1278,7 @@ export const AdminUsersPage = () => {
                   ) : (
                     <StudentInitialsAvatar
                       student={formData}
+                      allowAdminProfilePhoto
                       style={{
                         width: 48,
                         height: 48,
@@ -1534,6 +1611,47 @@ export const AdminUsersPage = () => {
           </div>
         </div>
       )}
+      {pendingAdminAction && (
+        <div
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget && !isConfirmingAdminAction) setPendingAdminAction(null);
+          }}
+          style={{ position: 'fixed', inset: 0, zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', background: 'rgba(15, 23, 42, 0.58)' }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-action-confirm-title"
+            style={{ width: '100%', maxWidth: '440px', padding: '24px', borderRadius: '16px', background: 'var(--bg-surface, #fff)', boxShadow: '0 24px 70px rgba(15, 23, 42, 0.28)', border: '1px solid var(--border-subtle, #e2e8f0)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+              <div style={{ width: '42px', height: '42px', flexShrink: 0, display: 'grid', placeItems: 'center', borderRadius: '12px', color: pendingAdminAction.type === 'delete' ? '#dc2626' : '#c2410c', background: pendingAdminAction.type === 'delete' ? '#fef2f2' : '#fff7ed' }}>
+                {pendingAdminAction.type === 'delete' ? <Trash2 size={20} /> : <ShieldOff size={20} />}
+              </div>
+              <div>
+                <h2 id="admin-action-confirm-title" style={{ margin: '1px 0 7px', color: 'var(--text-primary, #0f172a)', fontSize: '18px', fontWeight: 750 }}>
+                  {pendingAdminAction.type === 'delete' ? 'Delete administrator?' : 'Remove two-factor authentication?'}
+                </h2>
+                <p style={{ margin: 0, color: 'var(--text-secondary, #475569)', fontSize: '13px', lineHeight: 1.55 }}>
+                  {pendingAdminAction.type === 'delete'
+                    ? <>This will permanently delete <strong>{pendingAdminAction.name}</strong> and their administrator account.</>
+                    : <>This will disable 2FA for <strong>{pendingAdminAction.name}</strong>. They will need to set it up again to use two-factor authentication.</>}
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '9px', marginTop: '24px' }}>
+              <button type="button" disabled={isConfirmingAdminAction} onClick={() => setPendingAdminAction(null)} style={{ padding: '9px 15px', borderRadius: '8px', border: '1px solid var(--border-subtle, #cbd5e1)', background: 'var(--bg-surface, #fff)', color: 'var(--text-secondary, #475569)', fontWeight: 700, cursor: isConfirmingAdminAction ? 'wait' : 'pointer' }}>
+                Cancel
+              </button>
+              <button type="button" disabled={isConfirmingAdminAction} onClick={handleConfirmAdminAction} style={{ padding: '9px 15px', borderRadius: '8px', border: '1px solid transparent', background: pendingAdminAction.type === 'delete' ? '#dc2626' : '#c2410c', color: '#fff', fontWeight: 700, cursor: isConfirmingAdminAction ? 'wait' : 'pointer', opacity: isConfirmingAdminAction ? 0.7 : 1 }}>
+                {isConfirmingAdminAction ? 'Please wait…' : pendingAdminAction.type === 'delete' ? 'Delete administrator' : 'Remove 2FA'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {/* Bulk Import Admins Modal */}
       <BulkImportAdminsModal
         isOpen={isBulkImportOpen}

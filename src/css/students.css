@@ -1130,3 +1130,159 @@ html[data-theme="dark"] body .student-directory-list-details .student-directory-
 [data-theme="dark"] .student-directory-cards.list-view .student-mobile-list-actions {
     border-color: #303030 !important;
 }
+
+@media (max-width: 480px) {
+    .student-pagination-summary,
+    .student-loading-status {
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        line-height: 1.4;
+        color: #64748b;
+    }
+
+    .student-pagination-summary strong {
+        color: #0f172a;
+    }
+
+    .students-mobile-filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 7px !important;
+        align-items: stretch !important;
+    }
+
+    .students-mobile-filter-grid .mobile-filter-item {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    .students-mobile-filter-grid .custom-select-trigger {
+        min-height: 40px !important;
+        padding: 7px 9px !important;
+        gap: 5px !important;
+        border-radius: 9px !important;
+        font-size: 12px !important;
+    }
+
+    .students-mobile-filter-grid .custom-select-label-wrap {
+        gap: 5px !important;
+    }
+
+    .students-mobile-filter-grid .custom-select-prefix-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    .students-mobile-filter-grid .mobile-filter-item-utility {
+        grid-column: 1 / -1;
+        justify-content: space-between !important;
+        gap: 8px !important;
+    }
+
+    .students-mobile-filter-grid .mobile-filter-item-utility > div {
+        flex: 0 1 122px !important;
+    }
+
+    .students-mobile-filter-grid .mobile-filter-item-utility .view-mode-toggle {
+        margin-left: auto;
+    }
+
+    .student-directory-cards.list-view .student-mobile-list-card {
+        padding: 9px 10px !important;
+        gap: 6px !important;
+        border-radius: 12px !important;
+    }
+
+    .student-mobile-list-card > div:first-child {
+        gap: 6px !important;
+    }
+
+    .student-mobile-list-card > div:first-child > div:first-child {
+        gap: 8px !important;
+    }
+
+    .student-mobile-list-card input[type="checkbox"] {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .student-directory-list-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        flex-basis: 36px !important;
+    }
+
+    .student-mobile-list-name {
+        font-size: 13px !important;
+        line-height: 1.2;
+    }
+
+    .student-mobile-list-id {
+        font-size: 10.5px !important;
+        line-height: 1.2;
+    }
+
+    .student-mobile-list-card .student-grade-pill {
+        padding: 2px 6px !important;
+        font-size: 10px !important;
+    }
+
+    .student-directory-cards.list-view .student-directory-list-details {
+        gap: 5px !important;
+        padding: 7px 9px !important;
+        border-radius: 9px !important;
+    }
+
+    .student-directory-cards.list-view .student-directory-list-detail {
+        gap: 7px !important;
+    }
+
+    .student-directory-cards.list-view .student-directory-list-detail > svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .student-directory-cards.list-view .student-directory-list-detail + .student-directory-list-detail {
+        padding-top: 5px !important;
+    }
+
+    .student-directory-list-label {
+        font-size: 9px !important;
+        line-height: 1.1;
+    }
+
+    .student-directory-list-detail strong {
+        font-size: 11px !important;
+        line-height: 1.2;
+    }
+
+    .student-directory-list-contact {
+        font-size: 10px !important;
+    }
+
+    .student-directory-cards.list-view .student-mobile-list-actions {
+        padding-top: 5px !important;
+        gap: 6px !important;
+    }
+
+    .student-mobile-list-actions > button {
+        min-height: 36px !important;
+        padding: 6px 9px !important;
+        font-size: 11px !important;
+        gap: 5px !important;
+    }
+
+    .student-mobile-list-actions > button svg {
+        width: 13px;
+        height: 13px;
+    }
+}
+
+[data-theme="dark"] .student-pagination-summary,
+[data-theme="dark"] .student-loading-status {
+    color: #a3a3a3 !important;
+}
+
+[data-theme="dark"] .student-pagination-summary strong {
+    color: #f5f5f5 !important;
+}

@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { getStudentInitials } from '../../utils/studentInitials';
-import { getStudentPhoto } from '../../utils/studentPhoto';
+import { getAdminProfilePhoto, getStudentPhoto } from '../../utils/studentPhoto';
+import { getGeneratedStudentAvatar } from '../../../shared/studentAvatar.ts';
 
-export const StudentInitialsAvatar = ({ student, className, style, ...props }) => {
-  const image = getStudentPhoto(student?.image);
+export const StudentInitialsAvatar = ({ student, className, style, allowAdminProfilePhoto = false, ...props }) => {
+  const storedImage = allowAdminProfilePhoto
+    ? getAdminProfilePhoto(student?.image)
+    : getStudentPhoto(student?.image);
+  const image = storedImage || (!allowAdminProfilePhoto ? getGeneratedStudentAvatar(student) : '');
   const [failedImage, setFailedImage] = useState('');
 
   return (

@@ -3,7 +3,7 @@ const PLACEHOLDER_IMAGE_HOSTS = new Set([
   'ui-avatars.com'
 ]);
 
-export const getStudentPhoto = value => {
+const getPhoto = (value, { allowAdminPresets = false } = {}) => {
   if (typeof value !== 'string') return '';
   const image = value.trim();
   if (!image) return '';
@@ -13,11 +13,25 @@ export const getStudentPhoto = value => {
 
   try {
     const url = new URL(image);
-    if (PLACEHOLDER_IMAGE_HOSTS.has(url.hostname.toLowerCase())) return '';
+    const hostname = url.hostname.toLowerCase();
+    if (PLACEHOLDER_IMAGE_HOSTS.has(hostname)
+      && !(allowAdminPresets && hostname === 'images.unsplash.com')) return '';
     if (url.protocol === 'http:' || url.protocol === 'https:') return image;
   } catch {
     return '';
   }
 
   return '';
+};
+
+export const getStudentPhoto = value => getPhoto(value);
+
+// Admin profile presets are intentional profile photos, unlike generic
+// placeholder portraits in student records.
+export const getAdminProfilePhoto = value => {
+  if (typeof value === 'string'
+    && /(?:^|\/)(?:phcm-logo2?|viotrack-logo-nobg)\.(?:png|webp|jpe?g)(?:[?#].*)?$/i.test(value.trim())) {
+    return '';
+  }
+  return getPhoto(value, { allowAdminPresets: true });
 };

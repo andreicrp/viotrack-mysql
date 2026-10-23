@@ -10,8 +10,6 @@ import { BulkImportViolationsModal } from '../components/violations/BulkImportVi
 import {
   FolderOpen,
   Plus,
-  FileSpreadsheet,
-  Upload,
   Download,
   Search,
   Trash2,
@@ -28,6 +26,7 @@ import {
   Square,
   X,
   FileDown,
+  FileText,
   AlertCircle,
   HelpCircle,
   Sparkles,
@@ -37,6 +36,7 @@ import { getJsPDF } from '../utils/pdfHelper';
 import { readFileAsText, downloadSampleCsv } from '../utils/csvHelper';
 import { parseEntityCsv } from '../utils/entityCsv';
 import { SaveAsModal } from '../components/common/SaveAsModal';
+import { ImportFormatDropdown } from '../components/common/ImportFormatDropdown';
 
 export const ViolationTypesPage = () => {
   const { success, error, info } = useNotification();
@@ -390,42 +390,20 @@ export const ViolationTypesPage = () => {
         <div className="page-banner-actions">
           <div className="page-banner-secondary-group">
             <button
-              onClick={() => handleOpenExportSaveAs('pdf')}
-              className="page-banner-btn-secondary"
-              title="Save As formatted PDF violation offenses catalog"
-            >
-              <Download size={14} strokeWidth={2.2} /> Export PDF
-            </button>
-
-            <button
               onClick={() => handleOpenExportSaveAs('csv')}
               className="page-banner-btn-secondary"
-              title="Save As CSV / Excel spreadsheet"
+              title="Export the violation catalog as CSV, Excel, or PDF"
             >
-              <FileSpreadsheet size={14} strokeWidth={2.2} /> Export CSV
+              <Download size={14} strokeWidth={2.2} /> Export
             </button>
 
-            <button
-              onClick={() => {
-                setBulkImportFormat('pdf');
+            <ImportFormatDropdown
+              title="Choose a format to import violation types"
+              onSelect={(format) => {
+                setBulkImportFormat(format);
                 setIsImportModalOpen(true);
               }}
-              className="page-banner-btn-secondary"
-              title="Import violation types from PDF policy handbook"
-            >
-              <Upload size={14} strokeWidth={2.2} /> Import PDF
-            </button>
-
-            <button
-              onClick={() => {
-                setBulkImportFormat('csv');
-                setIsImportModalOpen(true);
-              }}
-              className="page-banner-btn-secondary"
-              title="Import violation types from CSV spreadsheet"
-            >
-              <Upload size={14} strokeWidth={2.2} /> Import CSV
-            </button>
+            />
           </div>
 
           <button
@@ -992,32 +970,8 @@ export const ViolationTypesPage = () => {
                       </span>
                     </div>
 
-                    {/* Middle Offense Hero Header (Icon + Title) */}
-                    <div className="violation-catalog-grid-hero" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                      <div
-                        className="violation-catalog-grid-icon"
-                        style={{
-                          width: 42,
-                          height: 42,
-                          borderRadius: '12px',
-                          background: isMajor ? 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' : isSerious ? 'linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)' : 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-                          border: `1px solid ${isMajor ? '#fecaca' : isSerious ? '#fde047' : '#bbf7d0'}`,
-                          color: isMajor ? '#dc2626' : isSerious ? '#a16207' : '#15803d',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}
-                      >
-                        {isMajor ? (
-                          <ShieldAlert size={20} strokeWidth={2.2} />
-                        ) : isSerious ? (
-                          <AlertTriangle size={20} strokeWidth={2.2} />
-                        ) : (
-                          <ShieldCheck size={20} strokeWidth={2.2} />
-                        )}
-                      </div>
-
+                    {/* Offense title without the redundant severity icon tile */}
+                    <div className="violation-catalog-grid-hero" style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <h4
                           className="violation-catalog-title"
@@ -1063,16 +1017,18 @@ export const ViolationTypesPage = () => {
                       <div
                         className="violation-catalog-description"
                         style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '6px',
                           color: '#64748b',
                           fontSize: '11.5px',
-                          lineHeight: 1.45,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden'
+                          lineHeight: 1.45
                         }}
                       >
-                        {v.description || 'Institutional handbook offense guideline.'}
+                        <FileText size={13} style={{ flex: '0 0 auto', marginTop: '1px', color: '#07345f' }} aria-hidden="true" />
+                        <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {v.description || 'Institutional handbook offense guideline.'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1150,12 +1106,14 @@ export const ViolationTypesPage = () => {
                   </div>
 
                   <div className="violation-catalog-detail-panel">
-                    <p className="violation-catalog-mobile-description" style={{ margin: 0, fontSize: '12.5px', color: '#64748b', lineHeight: 1.4 }}>
-                      {v.description || 'Standard handbook conduct policy infraction.'}
-                    </p>
+                    <div className="violation-catalog-mobile-description" style={{ display: 'flex', alignItems: 'flex-start', gap: '7px', margin: 0, fontSize: '12.5px', color: '#64748b', lineHeight: 1.4 }}>
+                      <FileText size={14} style={{ flex: '0 0 auto', marginTop: '1px', color: '#07345f' }} aria-hidden="true" />
+                      <span>{v.description || 'Standard handbook conduct policy infraction.'}</span>
+                    </div>
 
-                    <div className="violation-catalog-mobile-sanction" style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', color: '#334155' }}>
-                      Sanction: <strong className="violation-catalog-sanction-value" style={{ color: '#07345f' }}>{v.default_sanction || '1st Warning / Conference'}</strong>
+                    <div className="violation-catalog-mobile-sanction" style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', color: '#334155' }}>
+                      <Gavel size={13} style={{ flex: '0 0 auto', marginTop: '1px', color: '#07345f' }} aria-hidden="true" />
+                      <span>Sanction: <strong className="violation-catalog-sanction-value" style={{ color: '#07345f' }}>{v.default_sanction || '1st Warning / Conference'}</strong></span>
                     </div>
                   </div>
 
@@ -1196,7 +1154,7 @@ export const ViolationTypesPage = () => {
                         gap: '4px'
                       }}
                     >
-                      <Trash2 size={12} color="#dc2626" strokeWidth={2} /> Delete
+                      <Trash2 size={12} color="#dc2626" strokeWidth={2} /> Remove
                     </button>
                   </div>
                 </div>

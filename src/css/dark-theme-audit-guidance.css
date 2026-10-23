@@ -742,6 +742,26 @@ html[data-theme="dark"] body .admin-role-select-card.selected span:last-child {
   -webkit-text-fill-color: #cbd5e1 !important;
 }
 
+/* Keep the selected role readable when the page is in light mode. */
+:root:not([data-theme="dark"]) .admin-role-select-card.selected,
+[data-theme="light"] .admin-role-select-card.selected {
+  border: 2px solid #2563eb !important;
+  background: #eff6ff !important;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12), 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+}
+
+:root:not([data-theme="dark"]) .admin-role-select-card.selected span,
+[data-theme="light"] .admin-role-select-card.selected span {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+:root:not([data-theme="dark"]) .admin-role-select-card.selected span:last-child,
+[data-theme="light"] .admin-role-select-card.selected span:last-child {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
 /* ==========================================================================
    DASHBOARD CHART EMPTY STATES (DARK MODE)
    ========================================================================== */

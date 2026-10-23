@@ -1,8 +1,9 @@
 import React from 'react';
 
 /** Displays a student-specific QR with the VioTrack mark over its center. */
-export const BrandedStudentQr = ({ src, alt, style = {}, logoSize = '19%' }) => (
+export const BrandedStudentQr = ({ src, alt, style = {}, logoSize = '19%', className }) => (
   <span
+    className={className}
     style={{
       position: 'relative',
       display: 'inline-grid',

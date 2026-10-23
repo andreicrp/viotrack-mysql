@@ -315,6 +315,15 @@ export const AdvisersPage = () => {
 
         {/* Header Action Buttons */}
         <div className="page-banner-actions">
+          {isAdmin && (
+            <button
+              onClick={() => setIsAppointModalOpen(true)}
+              className="page-banner-primary-btn"
+            >
+              <UserPlus size={15} strokeWidth={2.5} /> Appoint New Adviser
+            </button>
+          )}
+
           <div className="page-banner-secondary-group">
             {isAdmin && (
               <>
@@ -326,32 +335,15 @@ export const AdvisersPage = () => {
                 </button>
 
                 <button
-                  onClick={() => handleOpenExportSaveAs('pdf')}
-                  className="page-banner-btn-secondary"
-                  title="Save As formatted PDF directory"
-                >
-                  <Upload size={14} strokeWidth={2.2} /> Export PDF
-                </button>
-
-                <button
                   onClick={() => handleOpenExportSaveAs('csv')}
                   className="page-banner-btn-secondary"
-                  title="Save As CSV / Excel spreadsheet"
+                  title="Export adviser directory as CSV, Excel, or PDF"
                 >
-                  <FileText size={14} strokeWidth={2.2} /> Export CSV
+                  <FileText size={14} strokeWidth={2.2} /> Export
                 </button>
               </>
             )}
           </div>
-
-          {isAdmin && (
-            <button
-              onClick={() => setIsAppointModalOpen(true)}
-              className="page-banner-primary-btn"
-            >
-              <UserPlus size={15} strokeWidth={2.5} /> Appoint New Adviser
-            </button>
-          )}
         </div>
       </div>
 
@@ -789,7 +781,7 @@ export const AdvisersPage = () => {
                               </span>
                             ) : (
                               <span className="adviser-status-pill violation">
-                                <AlertTriangle size={10} /> {stdViolations.length} Viol.
+                                <AlertTriangle size={10} /> {stdViolations.length} {stdViolations.length === 1 ? 'Violation' : 'Violations'}
                               </span>
                             )}
                           </div>

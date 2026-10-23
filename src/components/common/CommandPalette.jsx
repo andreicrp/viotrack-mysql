@@ -59,7 +59,7 @@ export const CommandPalette = ({
           dataService.getStudents(),
           dataService.getRecords(),
           dataService.getTeachers(),
-          dataService.getAdmins()
+          isAdmin ? dataService.getAdmins() : Promise.resolve([])
         ]);
         if (!isMounted) return;
         if (Array.isArray(studentData)) setStudents(studentData);
@@ -80,7 +80,7 @@ export const CommandPalette = ({
       isMounted = false;
       window.removeEventListener('viotrack_data_updated', handleUpdate);
     };
-  }, []);
+  }, [isAdmin]);
 
   // Handle focus, reset, and body scroll locking
   useEffect(() => {

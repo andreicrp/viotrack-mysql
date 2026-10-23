@@ -122,12 +122,13 @@ export const StudentViolationDetailPage = () => {
         setStudent(found);
         const isApproved = (r) => {
           if (!r) return false;
-          if (r.approval_status === 'Under Approval' || r.status === 'Under Approval') return false;
-          if (r.approval_status === 'Rejected' || r.status === 'Rejected') return false;
-          // Must be explicitly approved by an administrator
-          return r.approval_status === 'Approved';
+          const approvalStatus = String(r.approval_status || r.approvalStatus || '').trim().toLowerCase();
+          const status = String(r.status || '').trim().toLowerCase();
+          if (approvalStatus === 'under approval' || status === 'under approval') return false;
+          if (approvalStatus === 'rejected' || status === 'rejected') return false;
+          return approvalStatus === 'approved' || approvalStatus === 'not required';
         };
-        // For display: only approved records
+        // For display: approved records and records that do not require approval
         const studentHistory = (allRecords || [])
           .filter(r => String(r.student_id) === String(found.id))
           .filter(isApproved);
@@ -835,7 +836,7 @@ export const StudentViolationDetailPage = () => {
               <div style={{ fontSize: '13.5px', color: 'var(--text-secondary, #475569)', marginTop: '4px', fontWeight: 600 }}>
                 Student ID: <strong style={{ color: 'var(--text-primary, #0f172a)' }}>{student.student_id}</strong>
               </div>
-              <div style={{ fontSize: '12px', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="student-profile-identity-badges" style={{ fontSize: '12px', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{ background: 'var(--bg-input, #f1f5f9)', color: 'var(--text-primary, #1e293b)', border: '1px solid var(--border-subtle, #cbd5e1)', padding: '3.5px 10px', borderRadius: '20px', fontWeight: 700 }}>
                   {student.gender || 'Male'}
                 </span>
@@ -2003,13 +2004,13 @@ export const StudentViolationDetailPage = () => {
                   gap: '8px'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="sms-guardian-notice-recipient-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="sms-guardian-notice-field-label" style={{ color: '#64748b', fontWeight: 600 }}>Guardian Name:</span>
                   <strong className="sms-guardian-notice-field-value" style={{ color: '#07345f', fontWeight: 700 }}>
                     {student.parent_name || 'Lita Castillo (Guardian)'}
                   </strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="sms-guardian-notice-recipient-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="sms-guardian-notice-field-label" style={{ color: '#64748b', fontWeight: 600 }}>Target Phone Number:</span>
                   <span
                     className="sms-guardian-notice-phone"
@@ -2027,7 +2028,7 @@ export const StudentViolationDetailPage = () => {
                     +63 {student.parent_contact || '09156667789'}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="sms-guardian-notice-recipient-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="sms-guardian-notice-field-label" style={{ color: '#64748b', fontWeight: 600 }}>Student ID:</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span
@@ -2226,6 +2227,7 @@ export const StudentViolationDetailPage = () => {
       {/* 8. Official Student QR Pass Preview & Print Modal */}
       {isQrModalOpen && (
         <div
+          className="student-qr-pass-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
@@ -2240,6 +2242,7 @@ export const StudentViolationDetailPage = () => {
           onClick={(e) => { if (e.target === e.currentTarget) setIsQrModalOpen(false); }}
         >
           <div
+            className="student-qr-pass-modal"
             style={{
               background: '#ffffff',
               borderRadius: '24px',
@@ -2257,7 +2260,7 @@ export const StudentViolationDetailPage = () => {
               animation: 'fadeInUp 0.15s ease-out'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+            <div className="student-qr-pass-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
               <div>
                 <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
                   Official Student QR Pass
@@ -2312,6 +2315,7 @@ export const StudentViolationDetailPage = () => {
               >
                 {qrUrl ? (
                   <BrandedStudentQr
+                    className="student-qr-pass-code"
                     src={qrUrl}
                     alt={`QR Pass for ${student.student_id}`}
                     style={{ width: '180px', height: '180px', display: 'block' }}
@@ -2330,7 +2334,7 @@ export const StudentViolationDetailPage = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '6px' }}>
+            <div className="student-qr-pass-actions" style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '6px' }}>
               <button
                 type="button"
                 onClick={() => window.print()}

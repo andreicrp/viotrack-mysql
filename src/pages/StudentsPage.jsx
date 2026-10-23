@@ -13,10 +13,8 @@ import {
   Users,
   Search,
   UserPlus,
-  FileSpreadsheet,
   FileText,
   Download,
-  Upload,
   Plus,
   Trash2,
   Edit3,
@@ -37,6 +35,7 @@ import {
 import { getJsPDF } from '../utils/pdfHelper';
 import { exportToCsv } from '../utils/csvHelper';
 import { SaveAsModal } from '../components/common/SaveAsModal';
+import { ImportFormatDropdown } from '../components/common/ImportFormatDropdown';
 import { StudentInitialsAvatar } from '../components/students/StudentInitialsAvatar';
 
 import { ViewModeToggle } from '../components/common/ViewModeToggle';
@@ -421,50 +420,6 @@ export const StudentsPage = () => {
 
         {/* Header Action Buttons */}
         <div className="page-banner-actions">
-          <div className="page-banner-secondary-group">
-            <button
-              onClick={() => handleOpenExportSaveAs('pdf')}
-              className="page-banner-btn-secondary"
-              title="Save As formatted PDF student roster"
-            >
-              <Download size={14} strokeWidth={2.2} /> Export PDF
-            </button>
-
-            <button
-              onClick={() => handleOpenExportSaveAs('csv')}
-              className="page-banner-btn-secondary"
-              title="Save As CSV / Excel spreadsheet"
-            >
-              <FileSpreadsheet size={14} strokeWidth={2.2} /> Export CSV
-            </button>
-
-            {isAdmin && (
-              <>
-                <button
-                  onClick={() => {
-                    setBulkImportFormat('pdf');
-                    setIsBulkImportOpen(true);
-                  }}
-                  className="page-banner-btn-secondary"
-                  title="Import students from PDF document"
-                >
-                  <Upload size={14} strokeWidth={2.2} /> Import PDF
-                </button>
-
-                <button
-                  onClick={() => {
-                    setBulkImportFormat('csv');
-                    setIsBulkImportOpen(true);
-                  }}
-                  className="page-banner-btn-secondary"
-                  title="Import students from CSV spreadsheet"
-                >
-                  <Upload size={14} strokeWidth={2.2} /> Import CSV
-                </button>
-              </>
-            )}
-          </div>
-
           {isAdmin && (
             <button
               onClick={() => {
@@ -476,6 +431,26 @@ export const StudentsPage = () => {
               <Plus size={16} strokeWidth={2.5} /> Add Student
             </button>
           )}
+
+          <div className="page-banner-secondary-group">
+            <button
+              onClick={() => handleOpenExportSaveAs('csv')}
+              className="page-banner-btn-secondary"
+              title="Export student roster as CSV, Excel, or PDF"
+            >
+              <Download size={14} strokeWidth={2.2} /> Export
+            </button>
+
+            {isAdmin && (
+              <ImportFormatDropdown
+                title="Choose a format to import students"
+                onSelect={(format) => {
+                  setBulkImportFormat(format);
+                  setIsBulkImportOpen(true);
+                }}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -495,7 +470,7 @@ export const StudentsPage = () => {
 
       {/* Grade & Level Analytics Metric Cards */}
       <div
-        className="metric-cards-grid"
+        className="metric-cards-grid student-analytics-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -504,6 +479,7 @@ export const StudentsPage = () => {
       >
         {/* Total Students */}
         <div
+          className="student-analytics-card"
           onClick={() => { setLevelFilter('all'); setGradeFilter('all'); setStrandFilter('all'); }}
           style={{
             background: 'var(--bg-surface, #ffffff)',
@@ -517,14 +493,14 @@ export const StudentsPage = () => {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--brand-blue, #07345f)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div className="student-analytics-copy">
+              <div className="student-analytics-label" style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--brand-blue, #07345f)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 TOTAL STUDENTS
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '4px 0 2px 0', lineHeight: 1.1 }}>
+              <div className="student-analytics-value" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '4px 0 2px 0', lineHeight: 1.1 }}>
                 {stats.total}
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
+              <div className="student-analytics-description" style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
                 Across all levels & strands
               </div>
             </div>
@@ -534,6 +510,7 @@ export const StudentsPage = () => {
 
         {/* Junior High (G7-10) */}
         <div
+          className="student-analytics-card"
           onClick={() => { setLevelFilter('jhs'); setGradeFilter('all'); setStrandFilter('all'); }}
           style={{
             background: 'var(--bg-surface, #ffffff)',
@@ -547,14 +524,14 @@ export const StudentsPage = () => {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--brand-blue, #07345f)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div className="student-analytics-copy">
+              <div className="student-analytics-label" style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--brand-blue, #07345f)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 JUNIOR HIGH (G7-10)
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '4px 0 2px 0', lineHeight: 1.1 }}>
+              <div className="student-analytics-value" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '4px 0 2px 0', lineHeight: 1.1 }}>
                 {stats.jhsCount}
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
+              <div className="student-analytics-description" style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
                 Basic education students
               </div>
             </div>
@@ -564,6 +541,7 @@ export const StudentsPage = () => {
 
         {/* Senior High (G11-12) */}
         <div
+          className="student-analytics-card"
           onClick={() => { setLevelFilter('shs'); setGradeFilter('all'); }}
           style={{
             background: 'var(--bg-surface, #ffffff)',
@@ -577,14 +555,14 @@ export const StudentsPage = () => {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--brand-blue, #07345f)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div className="student-analytics-copy">
+              <div className="student-analytics-label" style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--brand-blue, #07345f)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 SENIOR HIGH (G11-12)
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '4px 0 2px 0', lineHeight: 1.1 }}>
+              <div className="student-analytics-value" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '4px 0 2px 0', lineHeight: 1.1 }}>
                 {stats.shsCount}
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
+              <div className="student-analytics-description" style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
                 Specialized strands & tracks
               </div>
             </div>
@@ -594,6 +572,7 @@ export const StudentsPage = () => {
 
         {/* Active Academic Strands */}
         <div
+          className="student-analytics-card"
           style={{
             background: 'var(--bg-surface, #ffffff)',
             borderRadius: '12px',
@@ -604,14 +583,14 @@ export const StudentsPage = () => {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--brand-blue, #07345f)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div className="student-analytics-copy">
+              <div className="student-analytics-label" style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--brand-blue, #07345f)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 ACADEMIC STRANDS
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '4px 0 2px 0', lineHeight: 1.1 }}>
+              <div className="student-analytics-value" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '4px 0 2px 0', lineHeight: 1.1 }}>
                 {stats.uniqueStrands}
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
+              <div className="student-analytics-description" style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
                 STEM, ABM, HUMSS, GAS, JHS
               </div>
             </div>
@@ -695,7 +674,7 @@ export const StudentsPage = () => {
             </div>
 
             {/* Sorting & Filter Selectors */}
-            <div className="mobile-filter-grid">
+            <div className="mobile-filter-grid students-mobile-filter-grid">
               {/* Sort By Selector */}
               <div className="mobile-filter-item">
                 <CustomSelect
@@ -707,8 +686,8 @@ export const StudentsPage = () => {
                     setSortOrder(o);
                   }}
                   options={[
-                    { value: 'grade-asc', label: 'Grade (7 → 12)' },
-                    { value: 'grade-desc', label: 'Grade (12 → 7)' },
+                    { value: 'grade-asc', label: 'Grade: 7–12' },
+                    { value: 'grade-desc', label: 'Grade: 12–7' },
                     { value: 'strand-asc', label: 'Strand (A → Z)' },
                     { value: 'strand-desc', label: 'Strand (Z → A)' },
                     { value: 'name-asc', label: 'Name (A → Z)' },
@@ -1546,19 +1525,25 @@ export const StudentsPage = () => {
             color: '#64748b'
           }}
         >
-          <div>
-            Showing{' '}
-            <strong style={{ color: '#0f172a' }}>
-              {filteredAndSortedStudents.length > 0 ? (currentPage - 1) * entriesPerPage + 1 : 0}
-            </strong>{' '}
-            to{' '}
-            <strong style={{ color: '#0f172a' }}>
-              {Math.min(currentPage * entriesPerPage, filteredAndSortedStudents.length)}
-            </strong>{' '}
-            of <strong style={{ color: '#0f172a' }}>{filteredAndSortedStudents.length}</strong> students
-          </div>
+          {loading ? (
+            <div className="student-loading-status" role="status" aria-live="polite">Loading students…</div>
+          ) : (
+            <>
+              <div className="student-pagination-summary">
+                Showing{' '}
+                <strong>
+                  {filteredAndSortedStudents.length > 0 ? (currentPage - 1) * entriesPerPage + 1 : 0}
+                </strong>{' '}
+                to{' '}
+                <strong>
+                  {Math.min(currentPage * entriesPerPage, filteredAndSortedStudents.length)}
+                </strong>{' '}
+                of <strong>{filteredAndSortedStudents.length}</strong> students
+              </div>
 
-          <CompactPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} ariaLabel="Students pagination" />
+              <CompactPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} ariaLabel="Students pagination" />
+            </>
+          )}
         </div>
       </div>
 

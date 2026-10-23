@@ -1,16 +1,12 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
-  Compass, 
   ArrowLeft, 
   Home, 
   Search, 
   ShieldAlert, 
   GraduationCap, 
-  QrCode,
-  SearchX,
-  HelpCircle,
-  Sparkles
+  QrCode
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import '../css/error-pages.css';
@@ -21,37 +17,39 @@ export function NotFoundPage({ standalone = false }) {
 
   const isStandaloneMode = standalone || !isAuthenticated;
 
+  useLayoutEffect(() => {
+    if (!isStandaloneMode) return undefined;
+
+    const lockedElements = [document.documentElement, document.body];
+    const previousStyles = lockedElements.map((element) => ({
+      element,
+      overflow: element.style.getPropertyValue('overflow'),
+      overflowPriority: element.style.getPropertyPriority('overflow'),
+      height: element.style.getPropertyValue('height'),
+      heightPriority: element.style.getPropertyPriority('height'),
+    }));
+
+    lockedElements.forEach((element) => {
+      element.style.setProperty('overflow', 'hidden', 'important');
+      element.style.setProperty('height', '100%', 'important');
+    });
+
+    return () => {
+      previousStyles.forEach(({ element, overflow, overflowPriority, height, heightPriority }) => {
+        if (overflow) element.style.setProperty('overflow', overflow, overflowPriority);
+        else element.style.removeProperty('overflow');
+        if (height) element.style.setProperty('height', height, heightPriority);
+        else element.style.removeProperty('height');
+      });
+    };
+  }, [isStandaloneMode]);
+
   return (
     <div className={`error-page-container ${isStandaloneMode ? 'standalone' : ''}`}>
       <div className="error-card">
-        {/* Brand Header for Standalone Mode */}
-        {isStandaloneMode && (
-          <div className="error-brand-logo">
-            <img src="/logo.png" alt="VioTrack Logo" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-            <span>VioTrack System</span>
-          </div>
-        )}
-
-        {/* Status Badge */}
-        <div className="error-badge badge-404">
-          <Compass size={13} />
-          <span>Error 404 • Page Not Found</span>
-        </div>
-
-        {/* High-Fidelity Icon Graphic */}
-        <div className="error-icon-wrapper icon-404">
-          <SearchX size={44} strokeWidth={1.75} />
-          <div className="error-icon-badge">
-            <HelpCircle size={15} color="#1d4ed8" strokeWidth={2.2} />
-          </div>
-        </div>
-
-        {/* Big Code & Heading */}
-        <h1 className="error-big-code code-404">404</h1>
-        <h2 className="error-title">Looking for something?</h2>
-        <p className="error-description">
-          We couldn't locate the page or record you requested. The URL may be mistyped, expired, or the resource has moved to a new address.
-        </p>
+        <img className="error-illustration" src="/images/error-404.png" alt="A traveler looking for a missing page" />
+        <h1 className="error-title">We couldn’t find that page</h1>
+        <p className="error-description">The address may be incorrect, or the page may have moved. Go back or choose a destination below.</p>
 
         {/* Primary Action Buttons */}
         <div className="error-actions">

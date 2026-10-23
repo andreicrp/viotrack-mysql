@@ -432,18 +432,68 @@ export const SaveAsModal = ({
           flex: 1;
           display: flex;
           align-items: center;
+          gap: 8px;
           background: #ffffff;
           border-radius: 10px;
           border: 1.5px solid #cbd5e1;
           padding: 0 10px 0 14px;
-          height: 46px;
+          height: 44px;
           min-width: 0;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-          transition: border-color 0.15s ease;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .saveas-input-box:hover {
+          border-color: #94a3b8;
         }
         .saveas-input-box:focus-within {
           border-color: #2563eb;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+        }
+        .saveas-modal input.saveas-file-input {
+          flex: 1 !important;
+          width: 100% !important;
+          min-width: 0 !important;
+          height: 100% !important;
+          background: transparent !important;
+          background-color: transparent !important;
+          border: 0 !important;
+          border-width: 0 !important;
+          border-style: none !important;
+          outline: none !important;
+          box-shadow: none !important;
+          font-family: inherit !important;
+          font-size: 14px !important;
+          font-weight: 600 !important;
+          color: #0f172a !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+        .saveas-modal input.saveas-file-input:focus {
+          border: 0 !important;
+          box-shadow: none !important;
+          outline: none !important;
+          background: transparent !important;
+        }
+        .saveas-clear-button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 22px;
+          height: 22px;
+          padding: 0;
+          margin: 0;
+          border: none;
+          border-radius: 50%;
+          background: #e2e8f0;
+          color: #64748b;
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: all 0.15s ease;
+        }
+        .saveas-clear-button:hover {
+          background: #cbd5e1;
+          color: #0f172a;
+          transform: scale(1.08);
         }
         .saveas-body {
           flex: 1;
@@ -472,11 +522,55 @@ export const SaveAsModal = ({
         }
         .saveas-item-light {
           min-height: 72px;
+          transition: background 0.15s ease;
+        }
+        .saveas-item-chevron {
+          color: #94a3b8;
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease;
+          flex-shrink: 0;
+        }
+        .saveas-item-light:hover .saveas-item-chevron {
+          transform: translateX(3px);
+          color: #2563eb;
         }
         .saveas-icon-tile {
           width: 44px;
           height: 44px;
           border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+        }
+        .saveas-item-light:hover .saveas-icon-tile {
+          transform: scale(1.05);
+        }
+        .saveas-icon-tile.is-cloud {
+          background: #eff6ff;
+          color: #2563eb;
+          border: 1px solid #dbeafe;
+        }
+        .saveas-icon-tile.is-device {
+          background: #f1f5f9;
+          color: #475569;
+          border: 1px solid #e2e8f0;
+        }
+        .saveas-icon-tile.is-browse,
+        .saveas-icon-tile.is-folder {
+          background: #fef3c7;
+          color: #d97706;
+          border: 1px solid #fde68a;
+        }
+        .saveas-icon-tile.is-add {
+          background: #eff6ff;
+          color: #2563eb;
+          border: 1px solid #dbeafe;
+        }
+        .saveas-icon-tile.is-storage {
+          background: #f1f5f9;
+          color: #475569;
+          border: 1px solid #e2e8f0;
         }
         .saveas-action-bar {
           gap: 10px !important;
@@ -509,16 +603,16 @@ export const SaveAsModal = ({
           background: #080808 !important;
         }
         [data-theme="dark"] .saveas-modal .saveas-list {
-          background: #111111 !important;
-          border-color: #2f2f2f !important;
-          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+          background: #121214 !important;
+          border: 1px solid #27272a !important;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
         }
         [data-theme="dark"] .saveas-modal .saveas-section-label {
-          color: #9ca3af !important;
+          color: #a1a1aa !important;
         }
         [data-theme="dark"] .saveas-modal .saveas-action-bar {
           background: #0b0b0b !important;
-          border-top-color: #2f2f2f !important;
+          border-top-color: #27272a !important;
           box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.24) !important;
         }
         [data-theme="dark"] .saveas-modal > div {
@@ -527,13 +621,13 @@ export const SaveAsModal = ({
           color: #f8fafc !important;
         }
         [data-theme="dark"] .saveas-modal .saveas-item-light {
-          background: #111111 !important;
-          border-bottom-color: #2f2f2f !important;
+          background: #121214 !important;
+          border-bottom: 1px solid #222225 !important;
           color: #f8fafc !important;
         }
         [data-theme="dark"] .saveas-modal [style*="borderTop"],
         [data-theme="dark"] .saveas-modal [style*="borderBottom"] {
-          border-color: #2f2f2f !important;
+          border-color: #222225 !important;
         }
         [data-theme="dark"] .saveas-modal [style*="text-transform: uppercase"] {
           color: #a8b4c4 !important;
@@ -545,29 +639,124 @@ export const SaveAsModal = ({
           -webkit-text-fill-color: #f8fafc !important;
         }
         [data-theme="dark"] .saveas-modal .saveas-item-light > div:nth-child(2) > div:nth-child(2) {
-          color: #a8b4c4 !important;
-          -webkit-text-fill-color: #a8b4c4 !important;
+          color: #a1a1aa !important;
+          -webkit-text-fill-color: #a1a1aa !important;
         }
-        [data-theme="dark"] .saveas-modal .saveas-item-light:hover,
+        [data-theme="dark"] .saveas-modal .saveas-item-light:hover {
+          background: #18181b !important;
+        }
         [data-theme="dark"] .saveas-modal .saveas-item-light:active {
-          background: #1b1b1b !important;
+          background: #202024 !important;
+        }
+        [data-theme="dark"] .saveas-modal .saveas-item-chevron {
+          color: #52525b !important;
+        }
+        [data-theme="dark"] .saveas-modal .saveas-item-light:hover .saveas-item-chevron {
+          color: #38bdf8 !important;
+          transform: translateX(3px);
+        }
+
+        /* Dark mode icon tiles: glowing translucent badges that match icons */
+        [data-theme="dark"] .saveas-modal .saveas-icon-tile.is-cloud {
+          background: rgba(37, 99, 235, 0.16) !important;
+          color: #60a5fa !important;
+          border: 1px solid rgba(59, 130, 246, 0.28) !important;
+          box-shadow: 0 0 16px rgba(37, 99, 235, 0.12) !important;
+        }
+        [data-theme="dark"] .saveas-modal .saveas-icon-tile.is-device {
+          background: rgba(148, 163, 184, 0.12) !important;
+          color: #94a3b8 !important;
+          border: 1px solid rgba(148, 163, 184, 0.22) !important;
+        }
+        [data-theme="dark"] .saveas-modal .saveas-icon-tile.is-browse,
+        [data-theme="dark"] .saveas-modal .saveas-icon-tile.is-folder {
+          background: rgba(217, 119, 6, 0.16) !important;
+          color: #fbbf24 !important;
+          border: 1px solid rgba(245, 158, 11, 0.28) !important;
+          box-shadow: 0 0 16px rgba(217, 119, 6, 0.1) !important;
+        }
+        [data-theme="dark"] .saveas-modal .saveas-icon-tile.is-add {
+          background: rgba(37, 99, 235, 0.16) !important;
+          color: #60a5fa !important;
+          border: 1px solid rgba(59, 130, 246, 0.28) !important;
+          box-shadow: 0 0 16px rgba(37, 99, 235, 0.12) !important;
+        }
+        [data-theme="dark"] .saveas-modal .saveas-icon-tile.is-storage {
+          background: rgba(148, 163, 184, 0.12) !important;
+          color: #94a3b8 !important;
+          border: 1px solid rgba(148, 163, 184, 0.22) !important;
+        }
+        [data-theme="dark"] .saveas-modal .saveas-file-icon-badge {
+          background: rgba(255, 255, 255, 0.08) !important;
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
         }
         [data-theme="dark"] .saveas-modal .saveas-input-box {
-          background: #050505 !important;
-          border: 1.5px solid #3a3a3a !important;
-          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+          background: #121214 !important;
+          border: 1.5px solid #27272a !important;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+        }
+        [data-theme="dark"] .saveas-modal .saveas-input-box:hover {
+          border-color: #3f3f46 !important;
+          background: #18181b !important;
         }
         [data-theme="dark"] .saveas-modal .saveas-input-box:focus-within {
-          border-color: #a3a3a3 !important;
-          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
+          border-color: #38bdf8 !important;
+          background: #18181b !important;
+          box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
         }
-        [data-theme="dark"] .saveas-modal .saveas-file-input {
+
+        /* Seamless input integration, defeating global (0, 6, 1) !important styles */
+        .saveas-modal input.saveas-file-input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]) {
           background: transparent !important;
+          background-color: transparent !important;
           border: 0 !important;
+          border-width: 0 !important;
+          border-style: none !important;
+          border-color: transparent !important;
+          border-radius: 0 !important;
+          outline: none !important;
           box-shadow: none !important;
-          outline: 0 !important;
+          color: #0f172a !important;
+          -webkit-text-fill-color: #0f172a !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          height: 100% !important;
+        }
+
+        [data-theme="dark"] .saveas-modal input.saveas-file-input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]) {
           color: #f8fafc !important;
           -webkit-text-fill-color: #f8fafc !important;
+        }
+
+        .saveas-modal .saveas-file-input:focus,
+        .saveas-modal input.saveas-file-input:focus,
+        .saveas-modal input.saveas-file-input:focus:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]),
+        html[data-theme="dark"] .saveas-modal .saveas-file-input:focus,
+        html[data-theme="dark"] .saveas-modal input.saveas-file-input:focus,
+        html[data-theme="dark"] .saveas-modal input.saveas-file-input:focus:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]),
+        body[data-theme="dark"] .saveas-modal .saveas-file-input:focus,
+        body[data-theme="dark"] .saveas-modal input.saveas-file-input:focus,
+        body[data-theme="dark"] .saveas-modal input.saveas-file-input:focus:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]),
+        [data-theme="dark"] .saveas-modal .saveas-file-input:focus,
+        [data-theme="dark"] .saveas-modal input.saveas-file-input:focus,
+        [data-theme="dark"] .saveas-modal input.saveas-file-input:focus:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]) {
+          background: transparent !important;
+          background-color: transparent !important;
+          border: 0 !important;
+          border-width: 0 !important;
+          border-style: none !important;
+          border-color: transparent !important;
+          outline: none !important;
+          box-shadow: none !important;
+        }
+
+        [data-theme="dark"] .saveas-modal .saveas-clear-button {
+          background: #27272a !important;
+          color: #a1a1aa !important;
+        }
+        [data-theme="dark"] .saveas-modal .saveas-clear-button:hover {
+          background: #3f3f46 !important;
+          color: #ffffff !important;
         }
         [data-theme="dark"] .saveas-modal input,
         [data-theme="dark"] .saveas-modal button,
@@ -745,8 +934,8 @@ export const SaveAsModal = ({
                 className="saveas-item-light"
                 onClick={() => handleSaveFile('cloud')}
               >
-                <div className="saveas-icon-tile" style={{ background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Cloud size={22} color="#2563eb" />
+                <div className="saveas-icon-tile is-cloud">
+                  <Cloud size={22} color="currentColor" />
                 </div>
                 <div style={{ flex: 1, marginLeft: '12px' }}>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
@@ -756,7 +945,7 @@ export const SaveAsModal = ({
                     {activeUserEmail}
                   </div>
                 </div>
-                <ChevronRight size={18} color="#94a3b8" />
+                <ChevronRight size={18} className="saveas-item-chevron" />
               </div>
 
               {/* This Device */}
@@ -764,8 +953,8 @@ export const SaveAsModal = ({
                 className="saveas-item-light"
                 onClick={() => setCurrentView('device')}
               >
-                <div className="saveas-icon-tile" style={{ background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Smartphone size={22} color="#475569" />
+                <div className="saveas-icon-tile is-device">
+                  <Smartphone size={22} color="currentColor" />
                 </div>
                 <div style={{ flex: 1, marginLeft: '12px' }}>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
@@ -775,7 +964,7 @@ export const SaveAsModal = ({
                     Internal storage (Download, Documents)
                   </div>
                 </div>
-                <ChevronRight size={18} color="#94a3b8" />
+                <ChevronRight size={18} className="saveas-item-chevron" />
               </div>
 
               {/* Browse (Android Storage Access Framework / Native Picker / Share) */}
@@ -783,8 +972,8 @@ export const SaveAsModal = ({
                 className="saveas-item-light"
                 onClick={() => handleSaveFile('browse')}
               >
-                <div className="saveas-icon-tile" style={{ background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Folder size={22} color="#d97706" />
+                <div className="saveas-icon-tile is-browse">
+                  <Folder size={22} color="currentColor" />
                 </div>
                 <div style={{ flex: 1, marginLeft: '12px' }}>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
@@ -794,7 +983,7 @@ export const SaveAsModal = ({
                     Google Drive, SD card, and other apps...
                   </div>
                 </div>
-                <ChevronRight size={18} color="#94a3b8" />
+                <ChevronRight size={18} className="saveas-item-chevron" />
               </div>
 
               {/* Add a place */}
@@ -803,8 +992,8 @@ export const SaveAsModal = ({
                 style={{ borderBottom: 'none' }}
                 onClick={() => info('Connect additional cloud accounts in System Settings.')}
               >
-                <div className="saveas-icon-tile" style={{ background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Plus size={22} color="#2563eb" />
+                <div className="saveas-icon-tile is-add">
+                  <Plus size={22} color="currentColor" />
                 </div>
                 <div style={{ flex: 1, marginLeft: '12px' }}>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
@@ -814,6 +1003,7 @@ export const SaveAsModal = ({
                     Connect to cloud storage
                   </div>
                 </div>
+                <ChevronRight size={18} className="saveas-item-chevron" />
               </div>
             </div>
           </div>
@@ -836,13 +1026,13 @@ export const SaveAsModal = ({
                   setCurrentView('folder');
                 }}
               >
-                <div className="saveas-icon-tile" style={{ background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Folder size={22} color="#d97706" />
+                <div className="saveas-icon-tile is-folder">
+                  <Folder size={22} color="currentColor" />
                 </div>
                 <div style={{ flex: 1, marginLeft: '12px', fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
                   Documents
                 </div>
-                <ChevronRight size={18} color="#94a3b8" />
+                <ChevronRight size={18} className="saveas-item-chevron" />
               </div>
 
               {/* Download Folder */}
@@ -854,13 +1044,13 @@ export const SaveAsModal = ({
                   setCurrentView('folder');
                 }}
               >
-                <div className="saveas-icon-tile" style={{ background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Folder size={22} color="#d97706" />
+                <div className="saveas-icon-tile is-folder">
+                  <Folder size={22} color="currentColor" />
                 </div>
                 <div style={{ flex: 1, marginLeft: '12px', fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
                   Download
                 </div>
-                <ChevronRight size={18} color="#94a3b8" />
+                <ChevronRight size={18} className="saveas-item-chevron" />
               </div>
 
               {/* General Storage */}
@@ -873,13 +1063,13 @@ export const SaveAsModal = ({
                   setCurrentView('folder');
                 }}
               >
-                <div className="saveas-icon-tile" style={{ background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <HardDrive size={22} color="#475569" />
+                <div className="saveas-icon-tile is-storage">
+                  <HardDrive size={22} color="currentColor" />
                 </div>
                 <div style={{ flex: 1, marginLeft: '12px', fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
                   Storage
                 </div>
-                <ChevronRight size={18} color="#94a3b8" />
+                <ChevronRight size={18} className="saveas-item-chevron" />
               </div>
             </div>
           </div>
@@ -915,16 +1105,19 @@ export const SaveAsModal = ({
                         }
                       }}
                     >
-                      <div style={{ 
-                        width: '40px', 
-                        height: '40px', 
-                        borderRadius: '8px', 
-                        background: meta.bg, 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        flexShrink: 0 
-                      }}>
+                      <div
+                        className="saveas-file-icon-badge"
+                        style={{ 
+                          width: '40px', 
+                          height: '40px', 
+                          borderRadius: '10px', 
+                          background: meta.bg, 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          flexShrink: 0 
+                        }}
+                      >
                         {meta.icon}
                       </div>
                       <div style={{ flex: 1, marginLeft: '12px', minWidth: 0 }}>
@@ -936,7 +1129,7 @@ export const SaveAsModal = ({
                         </div>
                       </div>
                       {meta.isDir && (
-                        <ChevronRight size={18} color="#94a3b8" />
+                        <ChevronRight size={18} className="saveas-item-chevron" />
                       )}
                     </div>
                   );
@@ -1020,34 +1213,18 @@ export const SaveAsModal = ({
             value={filename}
             onChange={(e) => setFilename(e.target.value)}
             placeholder="Enter file name"
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              color: '#0f172a',
-              fontSize: '14px',
-              fontWeight: 600,
-              outline: 'none',
-              minWidth: 0
-            }}
+            aria-label="File name"
           />
 
           {filename && (
             <button
               type="button"
               onClick={() => setFilename('')}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                padding: '4px',
-                display: 'flex',
-                alignItems: 'center'
-              }}
               className="saveas-clear-button"
+              aria-label="Clear file name"
+              title="Clear file name"
             >
-              <X size={15} />
+              <X size={13} strokeWidth={2.4} />
             </button>
           )}
         </div>

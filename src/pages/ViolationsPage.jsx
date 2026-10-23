@@ -32,16 +32,18 @@ import {
   X,
   Users,
   AlertCircle,
-  Upload,
   FileSpreadsheet,
   Calendar,
   User,
-  GraduationCap
+  GraduationCap,
+  SlidersHorizontal,
+  ChevronDown
 } from 'lucide-react';
 import { getJsPDF } from '../utils/pdfHelper';
 import { exportToCsv } from '../utils/csvHelper';
 import { ViewModeToggle } from '../components/common/ViewModeToggle';
 import { SaveAsModal } from '../components/common/SaveAsModal';
+import { StudentInitialsAvatar } from '../components/students/StudentInitialsAvatar';
 
 export const ViolationsPage = () => {
   const { user } = useAuth();
@@ -49,6 +51,7 @@ export const ViolationsPage = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
+  const [showMoreMobileFilters, setShowMoreMobileFilters] = useState(false);
   const [saveAsModalOpen, setSaveAsModalOpen] = useState(false);
   const [saveAsConfig, setSaveAsConfig] = useState({
     defaultFilename: 'Viotrack_Violations',
@@ -82,6 +85,7 @@ export const ViolationsPage = () => {
   const [severityFilter, setSeverityFilter] = useState('all'); // 'all' | 'minor' | 'serious' | 'major'
   const [gradeFilter, setGradeFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
+  const moreFilterCount = Number(yearFilter !== 'all') + Number(gradeFilter !== 'all') + Number(severityFilter !== 'all');
 
   // Sorting: 'date' | 'name' | 'severity' | 'status' | 'grade'
   const [sortField, setSortField] = useState('date');
@@ -104,9 +108,11 @@ export const ViolationsPage = () => {
 
   const isApproved = (r) => {
     if (!r) return false;
-    if (r.approval_status === 'Under Approval' || r.status === 'Under Approval') return false;
-    if (r.approval_status === 'Rejected' || r.status === 'Rejected') return false;
-    return r.approval_status === 'Approved';
+    const approvalStatus = String(r.approval_status || r.approvalStatus || '').trim().toLowerCase();
+    const status = String(r.status || '').trim().toLowerCase();
+    if (approvalStatus === 'under approval' || status === 'under approval') return false;
+    if (approvalStatus === 'rejected' || status === 'rejected') return false;
+    return approvalStatus === 'approved' || approvalStatus === 'not required';
   };
 
   const loadRecords = useCallback(async (forceRefresh = false) => {
@@ -613,8 +619,22 @@ export const ViolationsPage = () => {
 
         {/* Header Action Buttons */}
         <div className="page-banner-actions">
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="page-banner-primary-btn"
+          >
+            <Plus size={16} strokeWidth={2.5} /> Log Violation
+          </button>
+
           {isAdmin && (
             <div className="page-banner-secondary-group">
+              <button
+                onClick={() => handleOpenExportSaveAs('csv')}
+                className="page-banner-btn-secondary"
+                title="Export violation records as CSV, Excel, or PDF"
+              >
+                <Download size={14} strokeWidth={2.2} /> Export
+              </button>
               <div className="page-banner-datepicker-wrapper">
                 <CustomDatePicker
                   value={dateFilter}
@@ -626,29 +646,8 @@ export const ViolationsPage = () => {
                   style={{ width: '100%' }}
                 />
               </div>
-              <button
-                onClick={() => handleOpenExportSaveAs('pdf')}
-                className="page-banner-btn-secondary"
-                title="Save As formatted PDF report"
-              >
-                <Upload size={14} strokeWidth={2.2} /> Export PDF
-              </button>
-              <button
-                onClick={() => handleOpenExportSaveAs('csv')}
-                className="page-banner-btn-secondary"
-                title="Save As CSV / Excel report"
-              >
-                <FileText size={14} strokeWidth={2.2} /> Export CSV
-              </button>
             </div>
           )}
-
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="page-banner-primary-btn"
-          >
-            <Plus size={16} strokeWidth={2.5} /> Log Violation
-          </button>
         </div>
       </div>
 
@@ -856,9 +855,9 @@ export const ViolationsPage = () => {
             </div>
 
             {/* Sorting & Filter Controls */}
-            <div className="mobile-filter-grid">
+            <div className="mobile-filter-grid violations-mobile-filter-grid">
               {/* Sort By Selector */}
-              <div className="mobile-filter-item">
+              <div className="mobile-filter-item violations-primary-filter">
                 <CustomSelect
                   icon={ArrowUpDown}
                   value={`${sortField}-${sortOrder}`}
@@ -878,63 +877,8 @@ export const ViolationsPage = () => {
                 />
               </div>
 
-              {/* Year / Date Filter */}
-              <div className="mobile-filter-item">
-                <CustomSelect
-                  value={yearFilter}
-                  onChange={(e) => {
-                    setYearFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  options={[
-                    { value: 'all', label: 'All Years' },
-                    { value: '2027', label: 'Year 2027' },
-                    { value: '2026', label: 'Year 2026' },
-                    { value: '2025', label: 'Year 2025' },
-                    { value: '2024', label: 'Year 2024' }
-                  ]}
-                />
-              </div>
-
-              {/* Grade / Year Level Filter */}
-              <div className="mobile-filter-item">
-                <CustomSelect
-                  value={gradeFilter}
-                  onChange={(e) => {
-                    setGradeFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  options={[
-                    { value: 'all', label: 'All Grade Levels' },
-                    { value: 'Grade 7', label: 'Grade 7 (1st Year)' },
-                    { value: 'Grade 8', label: 'Grade 8 (2nd Year)' },
-                    { value: 'Grade 9', label: 'Grade 9 (3rd Year)' },
-                    { value: 'Grade 10', label: 'Grade 10 (4th Year)' },
-                    { value: 'Grade 11', label: 'Grade 11 (SHS Yr 1)' },
-                    { value: 'Grade 12', label: 'Grade 12 (SHS Yr 2)' }
-                  ]}
-                />
-              </div>
-
-              {/* Severity Filter */}
-              <div className="mobile-filter-item">
-                <CustomSelect
-                  value={severityFilter}
-                  onChange={(e) => {
-                    setSeverityFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  options={[
-                    { value: 'all', label: 'All Severities' },
-                    { value: 'minor', label: 'Minor Offenses' },
-                    { value: 'serious', label: 'Serious Offenses' },
-                    { value: 'major', label: 'Major Offenses' }
-                  ]}
-                />
-              </div>
-
               {/* Status Filter */}
-              <div className="mobile-filter-item">
+              <div className="mobile-filter-item violations-primary-filter">
                 <CustomSelect
                   value={statusFilter}
                   onChange={(e) => {
@@ -954,9 +898,73 @@ export const ViolationsPage = () => {
                 />
               </div>
 
-              {/* Entries per page & List / Grid View Toggle combined */}
-              <div className="mobile-filter-item mobile-filter-item-utility">
-                <div style={{ flex: 1, minWidth: 0 }}>
+              <button
+                type="button"
+                className="mobile-filter-more-toggle"
+                aria-expanded={showMoreMobileFilters}
+                aria-controls="violations-more-mobile-filters"
+                onClick={() => setShowMoreMobileFilters((open) => !open)}
+              >
+                <SlidersHorizontal size={15} />
+                <span>More filters</span>
+                {moreFilterCount > 0 && <span className="mobile-filter-active-count">{moreFilterCount}</span>}
+                <ChevronDown size={15} className={`mobile-filter-chevron${showMoreMobileFilters ? ' is-open' : ''}`} aria-hidden="true" />
+              </button>
+
+              <div
+                id="violations-more-mobile-filters"
+                className={`mobile-filter-more${showMoreMobileFilters ? ' is-open' : ''}`}
+              >
+                <div className="mobile-filter-item">
+                  <CustomSelect
+                    value={yearFilter}
+                    onChange={(e) => {
+                      setYearFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    options={[
+                      { value: 'all', label: 'All Years' },
+                      { value: '2027', label: 'Year 2027' },
+                      { value: '2026', label: 'Year 2026' },
+                      { value: '2025', label: 'Year 2025' },
+                      { value: '2024', label: 'Year 2024' }
+                    ]}
+                  />
+                </div>
+                <div className="mobile-filter-item">
+                  <CustomSelect
+                    value={gradeFilter}
+                    onChange={(e) => {
+                      setGradeFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    options={[
+                      { value: 'all', label: 'All Grade Levels' },
+                      { value: 'Grade 7', label: 'Grade 7 (1st Year)' },
+                      { value: 'Grade 8', label: 'Grade 8 (2nd Year)' },
+                      { value: 'Grade 9', label: 'Grade 9 (3rd Year)' },
+                      { value: 'Grade 10', label: 'Grade 10 (4th Year)' },
+                      { value: 'Grade 11', label: 'Grade 11 (SHS Yr 1)' },
+                      { value: 'Grade 12', label: 'Grade 12 (SHS Yr 2)' }
+                    ]}
+                  />
+                </div>
+                <div className="mobile-filter-item">
+                  <CustomSelect
+                    value={severityFilter}
+                    onChange={(e) => {
+                      setSeverityFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    options={[
+                      { value: 'all', label: 'All Severities' },
+                      { value: 'minor', label: 'Minor Offenses' },
+                      { value: 'serious', label: 'Serious Offenses' },
+                      { value: 'major', label: 'Major Offenses' }
+                    ]}
+                  />
+                </div>
+                <div className="mobile-filter-item mobile-filter-item-utility">
                   <CustomSelect
                     value={entriesPerPage}
                     onChange={(e) => {
@@ -971,6 +979,10 @@ export const ViolationsPage = () => {
                     ]}
                   />
                 </div>
+              </div>
+
+              <div className="mobile-view-mode-row">
+                <span>View</span>
                 <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
               </div>
             </div>
@@ -1514,7 +1526,7 @@ export const ViolationsPage = () => {
                     <div className="violation-grid-grade" style={{ color: '#64748b', fontSize: '11px' }}>
                       {rec.student?.grade || 'Grade 10'} • {rec.student?.section || 'Rizal'}
                     </div>
-                    <div style={{ marginTop: '2px' }}>
+                    <div style={{ marginTop: '2px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                       <span className="violation-list-status-label">Status:</span>
                       {renderStatusBadge(rec.status)}
                     </div>
@@ -1601,7 +1613,7 @@ export const ViolationsPage = () => {
                         onChange={() => toggleSelect(rec.id)}
                         style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#07345f', flexShrink: 0, borderRadius: '5px' }}
                       />
-                      <h3 style={{ margin: 0, minWidth: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', letterSpacing: '-0.02em', whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.25 }}>
+                      <h3 style={{ margin: 0, minWidth: 0, fontSize: '13px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', letterSpacing: '-0.02em', whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.25 }}>
                         {rec.violation?.title || 'Violation Incident'}
                       </h3>
                     </div>
@@ -1613,7 +1625,7 @@ export const ViolationsPage = () => {
                   {/* Incident Details Box */}
                   <div className="violation-list-offense-panel" style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {rec.student && (
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                      <div className="violation-student-summary-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                         <GraduationCap size={18} className="violation-detail-icon" style={{ color: '#64748b', marginTop: '2px', flexShrink: 0 }} />
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div className="violation-detail-label" style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>Student</div>
@@ -1621,6 +1633,7 @@ export const ViolationsPage = () => {
                             {rec.student.fname} {rec.student.lname} <span className="violation-student-meta" style={{ fontWeight: 500, color: '#64748b', fontSize: '11px' }}>({rec.student.student_id || 'N/A'} • {rec.student.grade || 'Grade 10'} - {rec.student.section || 'Rizal'})</span>
                           </div>
                         </div>
+                        <StudentInitialsAvatar student={rec.student} className="violation-student-avatar-top" style={{ width: 38, height: 38, fontSize: 12 }} />
                       </div>
                     )}
 

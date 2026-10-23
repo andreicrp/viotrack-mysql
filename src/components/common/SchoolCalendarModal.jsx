@@ -16,7 +16,12 @@ import { AddSchoolEventModal } from './AddSchoolEventModal';
 import { dataService } from '../../services/dataService';
 import { useNotification } from '../../context/NotificationContext';
 
-export const SchoolCalendarModal = ({ isOpen, onClose, initialDate = 23, initialMonth = new Date(2026, 8, 1) }) => {
+export const SchoolCalendarModal = ({
+  isOpen,
+  onClose,
+  initialDate = new Date().getDate(),
+  initialMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+}) => {
   const { success, error } = useNotification();
   const [events, setEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState(initialMonth);
@@ -30,8 +35,9 @@ export const SchoolCalendarModal = ({ isOpen, onClose, initialDate = 23, initial
   useEffect(() => {
     if (isOpen) {
       loadEvents();
-      setCurrentDate(initialMonth || new Date(2026, 8, 1));
-      setSelectedDay(initialDate || 23);
+      const today = new Date();
+      setCurrentDate(initialMonth || new Date(today.getFullYear(), today.getMonth(), 1));
+      setSelectedDay(initialDate || today.getDate());
       setIsAddModalOpen(false);
     }
   }, [isOpen, initialDate, initialMonth]);
@@ -47,6 +53,7 @@ export const SchoolCalendarModal = ({ isOpen, onClose, initialDate = 23, initial
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
+  const today = new Date();
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -64,7 +71,6 @@ export const SchoolCalendarModal = ({ isOpen, onClose, initialDate = 23, initial
   };
 
   const handleToday = () => {
-    const today = new Date(2026, 8, 23);
     setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
     setSelectedDay(today.getDate());
   };
@@ -292,7 +298,9 @@ export const SchoolCalendarModal = ({ isOpen, onClose, initialDate = 23, initial
                       }
 
                       const isSelected = cell.day === selectedDay;
-                      const isToday = cell.day === 23 && month === 8 && year === 2026;
+                      const isToday = cell.day === today.getDate()
+                        && month === today.getMonth()
+                        && year === today.getFullYear();
 
                       return (
                         <button

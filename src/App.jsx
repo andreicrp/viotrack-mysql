@@ -10,6 +10,7 @@ import { SplashScreen } from './components/common/SplashScreen';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { CookieConsentBanner } from './components/legal/CookieConsentBanner';
 import { ScreenLockModal } from './components/common/ScreenLockModal';
+import { PageLoader } from './components/common/PageLoader';
 import { dataService } from './services/dataService';
 import { lazyRetry } from './utils/lazyRetry';
 
@@ -17,6 +18,7 @@ import { lazyRetry } from './utils/lazyRetry';
 const DashboardPage = lazyRetry(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage || m.default })));
 const ViolationsPage = lazyRetry(() => import('./pages/ViolationsPage').then(m => ({ default: m.ViolationsPage || m.default })));
 const ViolationTypesPage = lazyRetry(() => import('./pages/ViolationTypesPage').then(m => ({ default: m.ViolationTypesPage || m.default })));
+const CaseDiscussionPage = lazyRetry(() => import('./pages/CaseDiscussionPage').then(m => ({ default: m.CaseDiscussionPage || m.default })));
 const StudentsPage = lazyRetry(() => import('./pages/StudentsPage').then(m => ({ default: m.StudentsPage || m.default })));
 const StudentViolationDetailPage = lazyRetry(() => import('./pages/StudentViolationDetailPage').then(m => ({ default: m.StudentViolationDetailPage || m.default })));
 const MyClassPage = lazyRetry(() => import('./pages/MyClassPage').then(m => ({ default: m.MyClassPage || m.default })));
@@ -28,35 +30,17 @@ const AdminDashboardPage = lazyRetry(() => import('./pages/AdminDashboardPage').
 const AdminUsersPage = lazyRetry(() => import('./pages/AdminUsersPage').then(m => ({ default: m.AdminUsersPage || m.default })));
 const ForApprovalPage = lazyRetry(() => import('./pages/ForApprovalPage').then(m => ({ default: m.ForApprovalPage || m.default })));
 const ActivityLogsPage = lazyRetry(() => import('./pages/ActivityLogsPage').then(m => ({ default: m.ActivityLogsPage || m.default })));
+const ClosedCaseChatsPage = lazyRetry(() => import('./pages/ClosedCaseChatsPage').then(m => ({ default: m.ClosedCaseChatsPage || m.default })));
 const ProfilePage = lazyRetry(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage || m.default })));
 const NotificationsPage = lazyRetry(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage || m.default })));
 const LoginPage = lazyRetry(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage || m.default })));
+const TwoFactorSetupPage = lazyRetry(() => import('./pages/TwoFactorSetupPage').then(m => ({ default: m.TwoFactorSetupPage || m.default })));
 const VerifyStudentPage = lazyRetry(() => import('./pages/VerifyStudentPage').then(m => ({ default: m.VerifyStudentPage || m.default })));
 const NotFoundPage = lazyRetry(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage || m.default })));
 const ForbiddenPage = lazyRetry(() => import('./pages/ForbiddenPage').then(m => ({ default: m.ForbiddenPage || m.default })));
 import { ServerErrorPage } from './pages/ServerErrorPage';
 const ErrorTestPage = lazyRetry(() => import('./pages/ErrorTestPage').then(m => ({ default: m.ErrorTestPage || m.default })));
-
-// Lightweight Route Loading Spinner
-const PageLoader = () => {
-  const { isDark } = useTheme();
-
-  return (
-    <div className={`page-loader ${isDark ? 'page-loader-dark' : 'page-loader-light'}`} role="status" aria-live="polite">
-      <div className="page-loader-content">
-        <div className="page-loader-spinner" aria-hidden="true">
-          <span />
-        </div>
-        <span className="page-loader-label">Loading VioTrack</span>
-        <span className="page-loader-dots" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </span>
-      </div>
-    </div>
-  );
-};
+const LoadingTestPage = lazyRetry(() => import('./pages/LoadingTestPage').then(m => ({ default: m.LoadingTestPage || m.default })));
 
 const AuthenticatedStartupTasks = () => {
   const { user, loading } = useAuth();
@@ -182,6 +166,7 @@ export function App() {
                 <Routes>
                 {/* Public Auth & Student ID Pass Routes */}
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/loading-test" element={<LoadingTestPage />} />
                 <Route path="/verify-student/:id" element={<VerifyStudentPage />} />
                 <Route path="/student-pass/:id" element={<VerifyStudentPage />} />
                 <Route path="/forbidden" element={<ForbiddenPage standalone />} />
@@ -204,6 +189,7 @@ export function App() {
                   <Route path="scan" element={<ScanQRPage />} />
                   <Route path="track-location" element={<TrackLocationPage />} />
                   <Route path="violations" element={<ViolationsPage />} />
+                  <Route path="case-discussion" element={<CaseDiscussionPage />} />
                   <Route path="violation-types" element={<ViolationTypesPage />} />
                   <Route path="students" element={<StudentsPage />} />
                   <Route path="student-violation/:id" element={<StudentViolationDetailPage />} />
@@ -211,6 +197,7 @@ export function App() {
                   <Route path="my-class" element={<MyClassPage />} />
                   <Route path="adviserview-student/:id" element={<MyClassPage />} />
                   <Route path="profile" element={<ProfilePage />} />
+                  <Route path="two-factor" element={<TwoFactorSetupPage />} />
                   <Route path="notifications" element={<NotificationsPage />} />
 
                   {/* Strict Admin RBAC Protected Routes */}
@@ -254,13 +241,21 @@ export function App() {
                       </ProtectedRoute>
                     } 
                   />
-                  <Route 
+                  <Route
                     path="activity-logs" 
                     element={
                       <ProtectedRoute requireAdmin>
                         <ActivityLogsPage />
                       </ProtectedRoute>
                     } 
+                  />
+                  <Route
+                    path="closed-case-chats"
+                    element={
+                      <ProtectedRoute requireAdmin>
+                        <ClosedCaseChatsPage />
+                      </ProtectedRoute>
+                    }
                   />
 
                   {/* Error & Fallback in layout */}

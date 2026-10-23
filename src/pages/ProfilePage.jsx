@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiPatch, apiPost } from '../lib/api';
+import { apiGet, apiPatch, apiPost } from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
@@ -29,6 +29,14 @@ import { LegalModal } from '../components/legal/LegalModal';
 import { evaluatePasswordStrength, validateUploadedFile } from '../utils/security';
 import '../css/profile.css';
 
+const avatarPresets = [
+  { src: '/images/viotrack-pfp-templates/viotrack-pfp1.webp', label: 'Thinking VioTrack mascot' },
+  { src: '/images/viotrack-pfp-templates/viotrack-pfp2.webp', label: 'Celebrating VioTrack mascot' },
+  { src: '/images/viotrack-pfp-templates/viotrack-pfp3.webp', label: 'Heart VioTrack mascot' },
+  { src: '/images/viotrack-pfp-templates/viotrack-pfp4.webp', label: 'Winking VioTrack mascot' },
+  { src: '/images/viotrack-pfp-templates/viotrack-pfp5.webp', label: 'Thumbs-up VioTrack mascot' }
+];
+
 export const ProfilePage = () => {
   const { user, setUser, logout, lockScreen } = useAuth();
   const { success, error } = useNotification();
@@ -41,7 +49,18 @@ export const ProfilePage = () => {
   const initialMiddle = nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : 'B.';
 
   const [activeTab, setActiveTab] = useState('general'); // 'general' | 'security' | 'permissions'
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorStatusLoading, setTwoFactorStatusLoading] = useState(true);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    apiGet('/auth/2fa/status')
+      .then(({ enabled }) => { if (mounted) setTwoFactorEnabled(Boolean(enabled)); })
+      .catch(() => { if (mounted) setTwoFactorEnabled(false); })
+      .finally(() => { if (mounted) setTwoFactorStatusLoading(false); });
+    return () => { mounted = false; };
+  }, [user?.id]);
 
   const [firstName, setFirstName] = useState(initialFirst);
   const [middleName, setMiddleName] = useState(initialMiddle);
@@ -51,7 +70,7 @@ export const ProfilePage = () => {
   const [department, setDepartment] = useState(user?.department || 'Prefect of Discipline & Guidance');
   const [employeeId] = useState(user?.id ? `ADM-2025-00${user.id}` : 'ADM-2025-001');
   const [role] = useState(user?.role || 'Admin');
-  const [avatar, setAvatar] = useState(user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80');
+  const [avatar, setAvatar] = useState(user?.avatar || avatarPresets[0].src);
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -78,14 +97,6 @@ export const ProfilePage = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // Avatar Presets
-  const avatarPresets = [
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80'
-  ];
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -217,7 +228,7 @@ export const ProfilePage = () => {
       setLastName(parts.length > 1 ? parts[parts.length - 1] : initialLast);
       setMiddleName(parts.length > 2 ? parts.slice(1, -1).join(' ') : initialMiddle);
       setEmail(user?.email || 'admin@viotrack.edu');
-      setAvatar(user?.avatar || avatarPresets[0]);
+      setAvatar(user?.avatar || avatarPresets[0].src);
       setSelectedFile(null);
       setSelectedFileName('');
       setNewPassword('');
@@ -288,33 +299,6 @@ export const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Quick Header Action Buttons */}
-          <div className="profile-hero-actions">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="profile-action-btn secondary"
-            >
-              <RotateCcw size={15} /> Reset
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving}
-              className="profile-action-btn primary"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 size={15} className="spin-animation" style={{ animation: 'spin 1s linear infinite' }} />
-                  {isUploading ? 'Uploading...' : 'Saving...'}
-                </>
-              ) : (
-                <>
-                  <Save size={15} /> Save Profile
-                </>
-              )}
-            </button>
-          </div>
         </div>
 
         {/* Section Navigation Tabs */}
@@ -494,22 +478,34 @@ export const ProfilePage = () => {
               {/* Preset Avatars Selection */}
               <div>
                 <label className="profile-form-label">
-                  Or Choose from Verified Avatar Presets:
+                  Choose a VioTrack Profile Picture Template:
                 </label>
                 <div className="profile-presets-row">
-                  {avatarPresets.map((imgUrl, index) => {
-                    const isSelected = avatar === imgUrl;
+                  {avatarPresets.map(({ src, label }) => {
+                    const isSelected = avatar === src;
                     return (
                       <div
-                        key={index}
+                        key={src}
                         onClick={() => {
-                          setAvatar(imgUrl);
+                          setAvatar(src);
                           setSelectedFile(null);
                           setSelectedFileName('');
                         }}
                         className={`profile-preset-box ${isSelected ? 'selected' : ''}`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Choose ${label}`}
+                        aria-pressed={isSelected}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setAvatar(src);
+                            setSelectedFile(null);
+                            setSelectedFileName('');
+                          }
+                        }}
                       >
-                        <img src={imgUrl} alt="Preset" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={src} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         {isSelected && (
                           <div className="profile-preset-check">
                             <Check size={18} color="#ffffff" />
@@ -540,7 +536,26 @@ export const ProfilePage = () => {
 
         {activeTab === 'security' && (
           <div className="profile-cards-grid">
-            
+            <div className="profile-card">
+              <div className="profile-card-header">
+                <div className="profile-card-icon blue"><Shield size={18} /></div>
+                <div>
+                  <h3 className="profile-card-title">Two-factor authentication</h3>
+                  <p className="profile-card-subtitle">Protect sign-in with Google Authenticator</p>
+                </div>
+              </div>
+              <p style={{ fontSize: '13px', color: '#475569' }}>
+                {twoFactorEnabled ? 'Your account is protected with an authenticator app.' : 'Scan a QR code with Google Authenticator and enter its 6-digit code at login.'}
+              </p>
+              <div className={`profile-2fa-status ${twoFactorEnabled ? 'is-enabled' : ''}`} role="status">
+                <span className="profile-2fa-status-dot" />
+                {twoFactorStatusLoading ? 'Checking status…' : twoFactorEnabled ? '2FA is enabled' : '2FA is not enabled'}
+              </div>
+              <button type="button" className="profile-save-button" onClick={() => navigate('/two-factor')}>
+                {twoFactorEnabled ? 'Configure authenticator' : 'Set up authenticator'}
+              </button>
+            </div>
+
             {/* Password Update Card */}
             <div className="profile-card">
               <div className="profile-card-header">

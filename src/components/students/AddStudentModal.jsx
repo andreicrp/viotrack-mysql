@@ -8,6 +8,7 @@ import { SectionSelect } from '../common/SectionSelect';
 import { StudentInitialsAvatar } from './StudentInitialsAvatar';
 import { validateUploadedFile } from '../../utils/security';
 import { getStudentPhoto } from '../../utils/studentPhoto';
+import { getGeneratedStudentAvatar } from '../../../shared/studentAvatar.ts';
 import '../../css/addstudent-modal.css';
 
 const isJHSGrade = (gradeStr) => {
@@ -57,7 +58,7 @@ export const AddStudentModal = ({ isOpen, onClose, studentToEdit = null, onSaved
     parent_name: '',
     parent_contact: '',
     address: '',
-    image: '',
+    image: getGeneratedStudentAvatar(),
   });
 
   const [existingStudents, setExistingStudents] = useState([]);
@@ -109,7 +110,7 @@ export const AddStudentModal = ({ isOpen, onClose, studentToEdit = null, onSaved
         parent_name: '',
         parent_contact: '',
         address: '',
-        image: ''
+        image: getGeneratedStudentAvatar()
       });
     }
     setSelectedImageFile(null);
@@ -225,7 +226,7 @@ export const AddStudentModal = ({ isOpen, onClose, studentToEdit = null, onSaved
           student_id: trimmedStudentId,
           fname: trimmedFname,
           lname: trimmedLname,
-          image: ''
+          image: getGeneratedStudentAvatar({ student_id: trimmedStudentId, fname: trimmedFname, lname: trimmedLname })
         });
         success(`Student ${trimmedFname} ${trimmedLname} registered successfully!`);
         onSaved?.(created);

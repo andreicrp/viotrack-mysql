@@ -3,6 +3,7 @@ import { dataService } from '../services/dataService';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { CompactPagination } from '../components/common/CompactPagination';
+import { StudentInitialsAvatar } from '../components/students/StudentInitialsAvatar';
 import { LanguageToolTextarea } from '../components/common/LanguageToolTextarea';
 import {
   ShieldAlert,
@@ -41,7 +42,6 @@ import {
 import { getJsPDF } from '../utils/pdfHelper';
 import { exportToCsv } from '../utils/csvHelper';
 import { SaveAsModal } from '../components/common/SaveAsModal';
-import { ViewModeToggle } from '../components/common/ViewModeToggle';
 import { CustomSelect } from '../components/common/CustomSelect';
 import { Modal } from '../components/common/Modal';
 import '../css/for-approval-responsive.css';
@@ -52,7 +52,7 @@ export const ForApprovalPage = () => {
 
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
+  const viewMode = 'grid';
   const [saveAsModalOpen, setSaveAsModalOpen] = useState(false);
   const [saveAsConfig, setSaveAsConfig] = useState({
     defaultFilename: 'Viotrack_For_Approval',
@@ -84,6 +84,7 @@ export const ForApprovalPage = () => {
   const [inspectRecord, setInspectRecord] = useState(null);
   const [approveTargetRecord, setApproveTargetRecord] = useState(null);
   const [rejectTargetRecord, setRejectTargetRecord] = useState(null);
+  const [deleteTargetRecord, setDeleteTargetRecord] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('Insufficient Evidence / Lack of Proof');
   const [customRejectNote, setCustomRejectNote] = useState('');
   const [approveStatusChoice, setApproveStatusChoice] = useState('Pending');
@@ -103,22 +104,40 @@ export const ForApprovalPage = () => {
   }, [error]);
 
   useEffect(() => {
-    loadData();
+    // Always fetch the queue from the server when the page is opened. A teacher
+    // may submit a report from another tab, so the cached record list can be
+    // stale even when this page is already mounted.
+    loadData(true);
+
+    const refreshOnFocus = () => loadData(true);
+    const refreshOnVisibility = () => {
+      if (document.visibilityState === 'visible') loadData(true);
+    };
+
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshOnVisibility);
+
     const handleDataUpdate = () => {
       loadData(true);
     };
     window.addEventListener('viotrack_data_updated', handleDataUpdate);
     return () => {
+      window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', refreshOnVisibility);
       window.removeEventListener('viotrack_data_updated', handleDataUpdate);
     };
   }, [loadData]);
 
   const getApprovalStatus = (r) => {
-    if (r.status === 'Under Approval' || r.approval_status === 'Under Approval') return 'Under Approval';
-    if (r.status === 'Rejected' || r.approval_status === 'Rejected') return 'Rejected';
-    if (r.reported_by_type === 'teacher' && !r.approved_by && r.status !== 'Resolved') return 'Under Approval';
-    if (r.approval_status === 'Approved') return 'Approved';
-    return r.approval_status || (r.status === 'Under Approval' ? 'Under Approval' : 'Approved');
+    const approvalStatus = String(r.approval_status || '').trim();
+    const status = String(r.status || '').trim();
+    if (approvalStatus === 'Rejected' || status === 'Rejected') return 'Rejected';
+    if (approvalStatus === 'Under Approval') return 'Under Approval';
+    if (approvalStatus === 'Approved') return 'Approved';
+    if (status === 'Under Approval' && (r.reported_by_type === 'teacher' || approvalStatus === 'Not Required')) return 'Under Approval';
+    if (r.reported_by_type !== 'teacher') return 'Not Required';
+    if (!r.approved_by && status !== 'Resolved') return 'Under Approval';
+    return approvalStatus || 'Approved';
   };
 
   // Metric Analytics
@@ -128,7 +147,8 @@ export const ForApprovalPage = () => {
     let rejected = 0;
     let highSeverity = 0;
 
-    for (const r of records) {
+    const approvalRecords = records.filter(r => r.reported_by_type === 'teacher' || ['Under Approval', 'Approved', 'Rejected'].includes(r.approval_status) || (r.status === 'Under Approval' && r.approval_status === 'Not Required'));
+    for (const r of approvalRecords) {
       const aStat = getApprovalStatus(r);
       if (aStat === 'Under Approval') {
         pending++;
@@ -146,7 +166,7 @@ export const ForApprovalPage = () => {
       approved,
       rejected,
       highSeverity,
-      total: records.length
+      total: approvalRecords.length
     };
   }, [records]);
 
@@ -154,7 +174,7 @@ export const ForApprovalPage = () => {
 
   // Filter & Sort Pipeline
   const filteredRecords = useMemo(() => {
-    let result = records.filter(r => {
+    let result = records.filter(r => r.reported_by_type === 'teacher' || ['Under Approval', 'Approved', 'Rejected'].includes(r.approval_status) || (r.status === 'Under Approval' && r.approval_status === 'Not Required')).filter(r => {
       const aStat = getApprovalStatus(r);
 
       // 1. Approval Status Filter
@@ -355,6 +375,26 @@ export const ForApprovalPage = () => {
     }
   };
 
+  const handleDeleteApprovalRecord = async () => {
+    if (!deleteTargetRecord) return;
+    const record = deleteTargetRecord;
+    setActionLoading(true);
+    try {
+      await dataService.deleteRecord(record.id);
+      setSelectedIds((current) => current.filter((id) => String(id) !== String(record.id)));
+      if (inspectRecord?.id === record.id) setInspectRecord(null);
+      if (rejectTargetRecord?.id === record.id) setRejectTargetRecord(null);
+      if (approveTargetRecord?.id === record.id) setApproveTargetRecord(null);
+      setDeleteTargetRecord(null);
+      success('Approval report deleted.');
+      await loadData(true);
+    } catch (err) {
+      error(`Failed to delete approval report: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Batch Operations
   const handleBatchApprove = async () => {
     if (selectedIds.length === 0) return;
@@ -513,49 +553,14 @@ export const ForApprovalPage = () => {
         <div className="page-banner-actions">
           <div className="page-banner-secondary-group">
             <button
-              onClick={() => handleOpenExportSaveAs('pdf')}
-              className="page-banner-btn-secondary"
-              title="Save As formatted PDF registry of approval cases"
-            >
-              <Upload size={14} strokeWidth={2.2} /> Export PDF
-            </button>
-
-            <button
               onClick={() => handleOpenExportSaveAs('csv')}
               className="page-banner-btn-secondary"
-              title="Save As CSV / Excel spreadsheet"
+              title="Export approval records as CSV, Excel, or PDF"
             >
-              <FileText size={14} strokeWidth={2.2} /> Export CSV
+              <FileText size={14} strokeWidth={2.2} /> Export
             </button>
           </div>
 
-          {selectedIds.length > 0 && (
-            <div className="bulk-selection-bar" style={{ marginTop: 0 }}>
-              <div className="bulk-selection-count">{selectedIds.length} report(s) selected</div>
-              <div className="bulk-selection-actions">
-                <button
-                  onClick={handleBatchApprove}
-                  disabled={actionLoading}
-                  className="bulk-selection-success page-banner-primary-btn"
-                  style={{ background: '#10b981', borderColor: '#059669', cursor: actionLoading ? 'not-allowed' : 'pointer' }}
-                >
-                  <CheckCircle2 size={16} strokeWidth={2.5} /> Approve ({selectedIds.length})
-                </button>
-
-                <button
-                  onClick={handleBatchReject}
-                  disabled={actionLoading}
-                  className="bulk-selection-danger page-banner-primary-btn"
-                  style={{ background: '#ef4444', borderColor: '#dc2626', cursor: actionLoading ? 'not-allowed' : 'pointer' }}
-                >
-                  <X size={16} strokeWidth={2.5} /> Reject ({selectedIds.length})
-                </button>
-                <button type="button" onClick={() => setSelectedIds([])} className="bulk-selection-neutral">
-                  Deselect All
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -825,11 +830,10 @@ export const ForApprovalPage = () => {
               </button>
             )}
 
-            <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />
           </div>
         </div>
 
-        {/* 4. Table / Grid Container */}
+        {/* 4. Approval Cards */}
         {loading ? (
           <div style={{ padding: '60px 0', textAlign: 'center' }}>
             <div
@@ -871,7 +875,7 @@ export const ForApprovalPage = () => {
           <>
             {/* Desktop View Table */}
             <div
-              className={`responsive-table-desktop table-container approval-table-container touch-scroll-x ${viewMode === 'grid' ? 'force-hidden' : ''}`}
+              className="responsive-table-desktop table-container approval-table-container touch-scroll-x force-hidden"
               style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}
             >
               <table className="custom-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -928,7 +932,6 @@ export const ForApprovalPage = () => {
                     const isApproved = aStat === 'Approved';
                     const isRejected = aStat === 'Rejected';
                     const studentName = (s.fname && s.lname) ? `${s.fname} ${s.lname}` : (s.name || s.full_name || r.student_name || 'Student');
-                    const studentAvatar = s.image || s.avatar || s.photo_url || s.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=07345f&color=fff&size=40&bold=true`;
 
                     return (
                       <tr
@@ -952,15 +955,7 @@ export const ForApprovalPage = () => {
                         {/* Student Info */}
                         <td style={{ padding: '12px 14px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <img
-                              src={studentAvatar}
-                              alt={studentName}
-                              style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', border: '1px solid #e2e8f0', flexShrink: 0 }}
-                              onError={(e) => {
-                                e.currentTarget.onerror = null;
-                                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=07345f&color=fff&size=40&bold=true`;
-                              }}
-                            />
+                            <StudentInitialsAvatar student={s} style={{ width: 34, height: 34, fontSize: 11 }} />
                             <div>
                               <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '13.5px', display: 'block' }}>
                                 {studentName}
@@ -1143,6 +1138,18 @@ export const ForApprovalPage = () => {
                                 >
                                   <X size={13} strokeWidth={2.5} /> Reject
                                 </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteTargetRecord(r)}
+                                  disabled={actionLoading}
+                                  className="approval-row-reject-btn"
+                                  style={{ padding: '5px 8px', borderRadius: '6px', color: '#b91c1c', background: '#fff7f7', border: '1px solid #fecaca', cursor: actionLoading ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                                  title="Delete this approval report permanently"
+                                  aria-label="Delete approval report"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
                               </>
                             )}
                           </div>
@@ -1155,7 +1162,7 @@ export const ForApprovalPage = () => {
             </div>
 
             {/* Mobile Cards & Desktop Grid View */}
-            <div className={`responsive-cards-mobile ${viewMode === 'grid' ? 'grid-view' : 'list-view'}`}>
+            <div className="responsive-cards-mobile grid-view">
               {viewMode === 'grid' ? (
                 paginatedRecords.map((r) => {
                   const isChecked = selectedIds.includes(r.id);
@@ -1166,7 +1173,6 @@ export const ForApprovalPage = () => {
                   const isPending = aStat === 'Under Approval';
                   const isApproved = aStat === 'Approved';
                   const studentName = (s.fname && s.lname) ? `${s.fname} ${s.lname}` : (s.name || s.full_name || r.student_name || 'Student');
-                  const studentAvatar = s.image || s.avatar || s.photo_url || s.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=07345f&color=fff&size=40&bold=true`;
 
                   return (
                     <div
@@ -1185,7 +1191,7 @@ export const ForApprovalPage = () => {
                       }}
                     >
                       {/* Card Header: Checkbox + Status */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div className="approval-mobile-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -1209,17 +1215,9 @@ export const ForApprovalPage = () => {
                       </div>
 
                       {/* Student Details */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <img
-                          src={studentAvatar}
-                          alt={studentName}
-                          style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '1px solid #e2e8f0' }}
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=07345f&color=fff&size=40&bold=true`;
-                          }}
-                        />
-                        <div>
+                      <div className="approval-mobile-student-row" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <StudentInitialsAvatar student={s} style={{ width: 40, height: 40, fontSize: 13 }} />
+                        <div className="approval-mobile-student-copy">
                           <div style={{ fontWeight: 800, fontSize: '14px', color: '#0f172a' }}>
                             {studentName}
                           </div>
@@ -1230,45 +1228,43 @@ export const ForApprovalPage = () => {
                       </div>
 
                       {/* Offense Card Box */}
-                      <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, marginBottom: '2px' }}>
-                          REPORTED OFFENSE
+                      <div className="approval-mobile-offense-panel" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center', background: '#f8fbff', padding: '10px 12px', borderRadius: '10px', border: '1px solid #dbeafe' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <AlertTriangle size={17} aria-hidden="true" style={{ flex: '0 0 auto', color: '#0b3158' }} />
+                          <div style={{ minWidth: 0 }}>
+                            <div className="approval-mobile-offense-label" style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, marginBottom: '2px' }}>
+                              REPORTED OFFENSE
+                            </div>
+                            <div className="approval-mobile-offense-title" style={{ fontWeight: 800, fontSize: '12px', color: '#0f172a', lineHeight: 1.35 }}>
+                              {v.title || v.name || 'Violation Incident'}
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ fontWeight: 800, fontSize: '13px', color: '#1e293b' }}>
-                          {v.title || v.name || 'Violation Incident'}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                          <span
-                            className={sevBadge.className}
-                            style={{
-                              fontSize: '10px',
-                              fontWeight: 700,
-                              padding: '2px 8px',
-                              borderRadius: '20px',
-                              background: sevBadge.bg,
-                              color: sevBadge.color,
-                              border: `1px solid ${sevBadge.border}`
-                            }}
-                          >
-                            {sevBadge.label}
-                          </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '12px', marginLeft: '12px', borderLeft: '1px solid #dbe4f0' }}>
+                          <ShieldAlert size={16} aria-hidden="true" style={{ flex: '0 0 auto', color: sevBadge.color }} />
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, marginBottom: '2px' }}>SEVERITY</div>
+                            <span className={sevBadge.className} style={{ fontSize: '11px', fontWeight: 700, color: sevBadge.color, whiteSpace: 'nowrap' }}>
+                              {sevBadge.label}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
                       {/* Remarks preview */}
                       {r.remarks && (
-                        <div style={{ fontSize: '12px', color: '#475569', fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <div className="approval-mobile-offense-remarks" style={{ fontSize: '12px', color: '#475569', fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           "{r.remarks}"
                         </div>
                       )}
 
                       {/* Submitter & Time */}
-                      <div style={{ fontSize: '11.5px', color: '#64748b', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+                      <div className="approval-mobile-reporter" style={{ fontSize: '11.5px', color: '#64748b', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
                         By: <strong>{r.reported_by_name || 'Faculty'}</strong> • {new Date(r.date_reported).toLocaleDateString()}
                       </div>
 
                       {/* Actions */}
-                      <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+                      <div className="approval-mobile-card-actions" style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
                         <button
                           type="button"
                           onClick={() => setInspectRecord(r)}
@@ -1317,6 +1313,7 @@ export const ForApprovalPage = () => {
                             <button
                               type="button"
                               onClick={() => handleOpenRejectModal(r)}
+                              aria-label="Reject approval"
                               style={{
                                 padding: '7px 10px',
                                 borderRadius: '8px',
@@ -1329,6 +1326,18 @@ export const ForApprovalPage = () => {
                               }}
                             >
                               <X size={13} />
+                              <span className="approval-mobile-action-label">Reject</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTargetRecord(r)}
+                              disabled={actionLoading}
+                              title="Delete this approval report permanently"
+                              aria-label="Delete approval report"
+                              style={{ padding: '7px 9px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, background: '#fff7f7', border: '1px solid #fecaca', color: '#b91c1c', cursor: actionLoading ? 'not-allowed' : 'pointer' }}
+                            >
+                              <Trash2 size={14} />
+                              <span className="approval-mobile-action-label">Delete</span>
                             </button>
                           </>
                         )}
@@ -1348,7 +1357,6 @@ export const ForApprovalPage = () => {
                   const isApproved = aStat === 'Approved';
                   const isRejected = aStat === 'Rejected';
                   const studentName = (s.fname && s.lname) ? `${s.fname} ${s.lname}` : (s.name || s.full_name || r.student_name || 'Student');
-                  const studentAvatar = s.image || s.avatar || s.photo_url || s.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=07345f&color=fff&size=40&bold=true`;
 
                   return (
                     <div
@@ -1374,22 +1382,7 @@ export const ForApprovalPage = () => {
                             onChange={() => toggleSelect(r.id)}
                             style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#07345f', flexShrink: 0 }}
                           />
-                          <img
-                            src={studentAvatar}
-                            alt={studentName}
-                            style={{
-                              width: 38,
-                              height: 38,
-                              borderRadius: '50%',
-                              objectFit: 'cover',
-                              border: '1.5px solid #e2e8f0',
-                              flexShrink: 0
-                            }}
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=07345f&color=fff&size=40&bold=true`;
-                            }}
-                          />
+                          <StudentInitialsAvatar student={s} style={{ width: 38, height: 38, fontSize: 12 }} />
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div className="approval-mobile-student-name" style={{ fontWeight: 800, fontSize: '13.5px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {studentName}
@@ -1423,7 +1416,8 @@ export const ForApprovalPage = () => {
                         <div className="approval-mobile-offense-label" style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>
                           Offense
                         </div>
-                        <div className="approval-mobile-offense-title" style={{ fontWeight: 800, fontSize: '13px', color: '#1e293b', lineHeight: 1.35 }}>
+                        <div className="approval-mobile-offense-title" style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontWeight: 800, fontSize: '13px', color: '#1e293b', lineHeight: 1.35 }}>
+                          <AlertTriangle size={14} aria-hidden="true" style={{ flex: '0 0 auto', marginTop: '1px', color: '#b45309' }} />
                           {v.title || v.name || 'Violation Incident'}
                         </div>
                         {r.remarks && (
@@ -1535,6 +1529,16 @@ export const ForApprovalPage = () => {
                             >
                               <X size={14} strokeWidth={2.5} />
                               <span className="approval-mobile-action-label">Reject</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTargetRecord(r)}
+                              disabled={actionLoading}
+                              title="Delete this approval report permanently"
+                              aria-label="Delete approval report"
+                              style={{ padding: '8px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, background: '#fff7f7', border: '1px solid #fecaca', color: '#b91c1c', cursor: actionLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '34px' }}
+                            >
+                              <Trash2 size={14} />
                             </button>
                           </>
                         )}
@@ -1665,7 +1669,6 @@ export const ForApprovalPage = () => {
       {/* 6. Comprehensive Case Inspection Modal */}
       {inspectRecord && (() => {
         const studentFullName = `${inspectRecord.student?.fname || ''} ${inspectRecord.student?.lname || ''}`.trim() || 'Student';
-        const studentAvatar = inspectRecord.student?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentFullName)}&background=07345f&color=fff&size=200&bold=true`;
         const aStat = getApprovalStatus(inspectRecord);
         const isUnderApproval = aStat === 'Under Approval';
         const isApproved = aStat === 'Approved';
@@ -1715,23 +1718,7 @@ export const ForApprovalPage = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                  <img
-                    src={studentAvatar}
-                    alt={studentFullName}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(studentFullName)}&background=07345f&color=fff&size=200&bold=true`;
-                    }}
-                    style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: '8px',
-                      objectFit: 'cover',
-                      border: '1px solid #e2e8f0',
-                      display: 'block',
-                      flexShrink: 0
-                    }}
-                  />
+                  <StudentInitialsAvatar student={inspectRecord.student} style={{ width: 42, height: 42, fontSize: 14 }} />
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1809,6 +1796,7 @@ export const ForApprovalPage = () => {
                       Reported Offense
                     </span>
                     <span
+                      className={`approve-incident-offense-severity-badge ${isMajor ? 'severity-major' : isSerious ? 'severity-serious' : 'severity-minor'}`}
                       style={{
                         fontSize: '10.5px',
                         fontWeight: 600,
@@ -2048,7 +2036,6 @@ export const ForApprovalPage = () => {
         const student = approveTargetRecord.student || {};
         const violation = approveTargetRecord.violation || {};
         const studentName = `${student.fname || ''} ${student.lname || ''}`.trim() || 'Student';
-        const studentAvatar = student.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=07345f&color=fff&size=120&bold=true`;
         const sevBadge = getSeverityBadge(violation.type);
 
         return (
@@ -2076,17 +2063,7 @@ export const ForApprovalPage = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <img
-                    src={studentAvatar}
-                    alt={studentName}
-                    style={{
-                      width: 38,
-                      height: 38,
-                      borderRadius: '8px',
-                      objectFit: 'cover',
-                      border: '1px solid #e2e8f0'
-                    }}
-                  />
+                  <StudentInitialsAvatar student={student} style={{ width: 38, height: 38, fontSize: 12 }} />
                   <div>
                     <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '14px' }}>
                       {studentName}
@@ -2277,7 +2254,6 @@ export const ForApprovalPage = () => {
         const student = rejectTargetRecord.student || {};
         const violation = rejectTargetRecord.violation || {};
         const studentName = `${student.fname || ''} ${student.lname || ''}`.trim() || 'Student';
-        const studentAvatar = student.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=07345f&color=fff&size=120&bold=true`;
         const sevBadge = getSeverityBadge(violation.type);
 
         return (
@@ -2304,17 +2280,7 @@ export const ForApprovalPage = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <img
-                    src={studentAvatar}
-                    alt={studentName}
-                    style={{
-                      width: 38,
-                      height: 38,
-                      borderRadius: '8px',
-                      objectFit: 'cover',
-                      border: '1px solid #fecaca'
-                    }}
-                  />
+                  <StudentInitialsAvatar student={student} style={{ width: 38, height: 38, fontSize: 12 }} />
                   <div>
                     <div style={{ fontWeight: 700, color: '#991b1b', fontSize: '14px' }}>
                       {studentName}
@@ -2477,6 +2443,50 @@ export const ForApprovalPage = () => {
           </Modal>
         );
       })()}
+
+      {/* Permanently Delete Approval Report Confirmation */}
+      <Modal
+        isOpen={Boolean(deleteTargetRecord)}
+        onClose={() => !actionLoading && setDeleteTargetRecord(null)}
+        title="Delete approval report?"
+        icon={Trash2}
+        maxWidth="440px"
+        dialogClassName="approval-delete-dialog"
+      >
+        <div style={{ padding: '8px 22px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '13px 14px', border: '1px solid #fecaca', borderRadius: '12px', background: '#fff7f7' }}>
+            <span style={{ display: 'grid', width: 34, height: 34, flex: '0 0 34px', placeItems: 'center', color: '#b91c1c', background: '#fee2e2', borderRadius: '10px' }}>
+              <AlertTriangle size={18} />
+            </span>
+            <div>
+              <strong style={{ display: 'block', color: '#7f1d1d', fontSize: '13px', marginBottom: '4px' }}>
+                This permanently removes the report
+              </strong>
+              <p style={{ margin: 0, color: '#7f1d1d', fontSize: '12px', lineHeight: 1.5 }}>
+                Delete the approval report for <b>{deleteTargetRecord?.student?.fname || 'this student'}</b>? This action cannot be undone.
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '9px' }}>
+            <button
+              type="button"
+              onClick={() => setDeleteTargetRecord(null)}
+              disabled={actionLoading}
+              style={{ minHeight: 38, padding: '8px 14px', color: '#334155', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '9px', fontSize: '12px', fontWeight: 700, cursor: actionLoading ? 'not-allowed' : 'pointer' }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteApprovalRecord}
+              disabled={actionLoading}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 38, padding: '8px 14px', color: '#fff', background: '#dc2626', border: '1px solid #dc2626', borderRadius: '9px', fontSize: '12px', fontWeight: 750, cursor: actionLoading ? 'not-allowed' : 'pointer', opacity: actionLoading ? .7 : 1 }}
+            >
+              <Trash2 size={14} />{actionLoading ? 'Deleting…' : 'Delete report'}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Save As / Export Modal */}
       <SaveAsModal

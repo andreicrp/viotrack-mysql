@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { exportToCsv } from '../utils/csvHelper';
 import { SaveAsModal } from '../components/common/SaveAsModal';
+import { ImportFormatDropdown } from '../components/common/ImportFormatDropdown';
 import {
   GraduationCap,
   UserCheck,
@@ -18,8 +19,6 @@ import {
   UserPlus,
   Building,
   Search,
-  Upload,
-  FileSpreadsheet,
   Trash2,
   Edit3,
   ArrowUpDown,
@@ -29,6 +28,7 @@ import {
   Mail,
   Phone,
   ShieldCheck,
+  ShieldOff,
   CheckCircle2,
   Award,
   ChevronRight,
@@ -322,7 +322,7 @@ export const TeachersPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div className="teacher-directory-page" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* 1. Top Banner & Primary Actions */}
       <div className="page-banner-header">
         <div className="page-banner-info">
@@ -339,46 +339,6 @@ export const TeachersPage = () => {
 
         {/* Header Action Buttons */}
         <div className="page-banner-actions">
-          <div className="page-banner-secondary-group">
-            <button
-              onClick={() => handleOpenExportSaveAs('pdf')}
-              className="page-banner-btn-secondary"
-              title="Save As formatted PDF faculty directory"
-            >
-              <Download size={14} strokeWidth={2.2} /> Export PDF
-            </button>
-
-            <button
-              onClick={() => handleOpenExportSaveAs('csv')}
-              className="page-banner-btn-secondary"
-              title="Save As CSV / Excel spreadsheet"
-            >
-              <FileSpreadsheet size={14} strokeWidth={2.2} /> Export CSV
-            </button>
-
-            <button
-              onClick={() => {
-                setBulkImportFormat('pdf');
-                setIsBulkImportOpen(true);
-              }}
-              className="page-banner-btn-secondary"
-              title="Import faculty roster from PDF document"
-            >
-              <Upload size={14} strokeWidth={2.2} /> Import PDF
-            </button>
-
-            <button
-              onClick={() => {
-                setBulkImportFormat('csv');
-                setIsBulkImportOpen(true);
-              }}
-              className="page-banner-btn-secondary"
-              title="Import faculty members from CSV spreadsheet"
-            >
-              <Upload size={14} strokeWidth={2.2} /> Import CSV
-            </button>
-          </div>
-
           <button
             onClick={() => {
               setTeacherToEdit(null);
@@ -388,6 +348,24 @@ export const TeachersPage = () => {
           >
             <Plus size={16} strokeWidth={2.5} /> Add New Teacher
           </button>
+
+          <div className="page-banner-secondary-group">
+            <button
+              onClick={() => handleOpenExportSaveAs('csv')}
+              className="page-banner-btn-secondary"
+              title="Export faculty directory as CSV, Excel, or PDF"
+            >
+              <Download size={14} strokeWidth={2.2} /> Export
+            </button>
+
+            <ImportFormatDropdown
+              title="Choose a format to import faculty"
+              onSelect={(format) => {
+                setBulkImportFormat(format);
+                setIsBulkImportOpen(true);
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -778,6 +756,10 @@ export const TeachersPage = () => {
                           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: 'var(--text-secondary, #334155)' }}>
                             <Mail size={13} color="var(--text-muted, #94a3b8)" />
                             <span>{teacher.email}</span>
+                            <span aria-label={`2FA: ${teacher.twoFactorEnabled ? 'Enabled' : 'Disabled'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 7px', borderRadius: '999px', border: `1px solid ${teacher.twoFactorEnabled ? '#86efac' : '#cbd5e1'}`, background: teacher.twoFactorEnabled ? '#f0fdf4' : '#f8fafc', color: teacher.twoFactorEnabled ? '#15803d' : '#64748b', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                              {teacher.twoFactorEnabled ? <ShieldCheck size={12} /> : <ShieldOff size={12} />}
+                              2FA: {teacher.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                            </span>
                           </div>
                           {teacher.contact && (
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>
@@ -962,7 +944,7 @@ export const TeachersPage = () => {
                       title={adv ? 'Adviser Assigned' : 'Appoint as Class Adviser'}
                       style={{ color: adv ? '#16a34a' : '#07345f', borderColor: adv ? '#bbf7d0' : '#cbd5e1', background: adv ? '#f0fdf4' : '#ffffff' }}
                     >
-                      <Award size={11} strokeWidth={2.4} /> {adv ? 'Adv' : 'Appoint'}
+                      <Award size={11} strokeWidth={2.4} /> {adv ? 'Adviser' : 'Appoint'}
                     </button>
                     <button
                       type="button"
@@ -970,11 +952,11 @@ export const TeachersPage = () => {
                         setTeacherToEdit(teacher);
                         setIsEditModalOpen(true);
                       }}
-                      className="entity-grid-btn"
+                      className="entity-grid-btn teacher-grid-edit-action"
                       title="Edit Teacher Details"
                       style={{ flex: '0 0 28px' }}
                     >
-                      <Edit3 size={11} strokeWidth={2.4} />
+                      <Edit3 size={11} strokeWidth={2.4} /> <span>Edit</span>
                     </button>
                     <button
                       type="button"
@@ -1073,18 +1055,39 @@ export const TeachersPage = () => {
                   </div>
 
                   {/* Middle Row: Department & Contact */}
-                  <div className="teacher-mobile-list-details" style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f8fafc', padding: '8px 10px', borderRadius: '8px', fontSize: '12px', color: '#475569' }}>
-                    <div style={{ fontWeight: 600, color: '#334155' }}>
-                      <strong>Department:</strong> {teacher.department || 'Faculty Department'}
+                  <div className="student-directory-list-details teacher-directory-list-details">
+                    <div className="student-directory-list-detail">
+                      <Building size={18} aria-hidden="true" />
+                      <div>
+                        <span className="student-directory-list-label">Department</span>
+                        <strong>{teacher.department || 'Faculty Department'}</strong>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Mail size={12} color="#94a3b8" />
-                      <span style={{ wordBreak: 'break-all' }}>{teacher.email}</span>
+                    <div className="student-directory-list-detail">
+                      <Mail size={18} aria-hidden="true" />
+                      <div>
+                        <span className="student-directory-list-label">Institutional email</span>
+                        <strong>{teacher.email || 'No email listed'}</strong>
+                      </div>
+                    </div>
+                    <div className="student-directory-list-detail">
+                      <Phone size={18} aria-hidden="true" />
+                      <div>
+                        <span className="student-directory-list-label">Contact</span>
+                        <strong>{teacher.contact || 'Not listed'}</strong>
+                      </div>
+                    </div>
+                    <div className="student-directory-list-detail">
+                      {teacher.twoFactorEnabled ? <ShieldCheck size={18} aria-hidden="true" /> : <ShieldOff size={18} aria-hidden="true" />}
+                      <div>
+                        <span className="student-directory-list-label">Two-factor authentication</span>
+                        <strong style={{ color: teacher.twoFactorEnabled ? '#15803d' : '#64748b' }}>{teacher.twoFactorEnabled ? 'Enabled' : 'Disabled'}</strong>
+                      </div>
                     </div>
                   </div>
 
                   {/* Actions Row */}
-                  <div className="teacher-mobile-list-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', paddingTop: '4px', borderTop: '1px solid #f1f5f9' }}>
+                  <div className="teacher-mobile-list-actions student-directory-list-actions" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', paddingTop: '6px', borderTop: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
                     <button
                       onClick={() => setTeacherForAdviser(teacher)}
                       className="is-positive-action"
